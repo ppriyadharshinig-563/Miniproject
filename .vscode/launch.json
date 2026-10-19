@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Launch BackendServer",
+      "request": "launch",
+      "mainClass": "BackendServer",
+      "args": "8080",
+      "classPaths": [
+        "${workspaceFolder}",
+        "${workspaceFolder}/lib/mysql-connector-j-26.7.0/mysql-connector-j-26.7.0.jar"
+      ]
+    }
+  ]
+}

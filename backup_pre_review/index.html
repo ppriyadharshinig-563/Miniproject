@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart College Bus Coordination and Route Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- =========================================================================
+       1. LOGIN LANDING PAGE (ACCESSIBLE VIA #loginScreen OR DEFAULT WHEN TARGETED)
+       ========================================================================= -->
+  <div class="login-wrapper" id="loginScreen">
+    <div class="login-card">
+      
+      <!-- Brand Header -->
+      <div class="login-header">
+        <div class="login-logo-mark">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2 10.9 2 11.2 2 11.5V16c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>
+        <div class="login-header-text">
+          <h1>CampusTransit Portal</h1>
+          <p>Smart College Bus Coordination &amp; Route Management</p>
+        </div>
+        <a href="#view-admin-dashboard" class="login-close-corner" title="Skip to Dashboard">&times;</a>
+      </div>
+
+      <!-- Pure CSS Radio Tabs for Login Role Switching -->
+      <input type="radio" name="loginRoleTab" id="tab-login-admin" class="tab-radio" checked>
+      <input type="radio" name="loginRoleTab" id="tab-login-student" class="tab-radio">
+      <input type="radio" name="loginRoleTab" id="tab-login-driver" class="tab-radio">
+
+      <div class="login-role-tabs">
+        <label for="tab-login-admin" class="login-tab-label" id="label-admin">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Admin Login
+        </label>
+        <label for="tab-login-student" class="login-tab-label" id="label-student">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          Student Login
+        </label>
+        <label for="tab-login-driver" class="login-tab-label" id="label-driver">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>
+          Bus / Driver Login
+        </label>
+      </div>
+
+      <!-- TAB 1: ADMIN LOGIN SECTION -->
+      <div class="login-section" id="loginSecAdmin">
+        <div class="login-type-banner">
+          <strong>Transportation Office Administration</strong>
+          <span>Complete authority over student allocation, bus fleet capacities, breakdown recovery, and fees.</span>
+        </div>
+
+        <div class="quick-login-box">
+          <span class="quick-label">Direct One-Click Access:</span>
+          <a href="#view-admin-dashboard" class="btn btn-outline w-full text-left demo-direct-btn">
+            <strong>Sign In as Administrator</strong> (Full System Access)
+          </a>
+        </div>
+
+        <form action="#view-admin-dashboard">
+          <div class="form-group">
+            <label class="form-label" for="adminUsername">Admin Username</label>
+            <input type="text" id="adminUsername" class="form-input" value="admin" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="adminPassword">Admin Password</label>
+            <input type="password" id="adminPassword" class="form-input" value="admin123" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Sign In to Admin Dashboard &rarr;</button>
+        </form>
+      </div>
+
+      <!-- TAB 2: STUDENT LOGIN SECTION -->
+      <div class="login-section" id="loginSecStudent">
+        <div class="login-type-banner">
+          <strong>Student Transit Portal</strong>
+          <span>View assigned bus &amp; pickup stop, declare tomorrow's travel intention, review delays, and submit complaints.</span>
+        </div>
+
+        <div class="quick-login-box">
+          <span class="quick-label">One-Click Demo Student Accounts:</span>
+          <div class="demo-account-grid">
+            <a href="#view-student-portal" class="btn-demo-pill">
+              <strong>#101 Rahul Sharma</strong>
+              <small>Bus 1 &bull; Tambaram</small>
+            </a>
+            <a href="#view-student-portal" class="btn-demo-pill">
+              <strong>#114 Deepa L</strong>
+              <small>Bus 2 &bull; Porur</small>
+            </a>
+            <a href="#view-student-portal" class="btn-demo-pill">
+              <strong>#126 Deepak R</strong>
+              <small>Bus 3 &bull; Thiruvanmiyur</small>
+            </a>
+            <a href="#view-student-portal" class="btn-demo-pill">
+              <strong>#136 Malini V</strong>
+              <small>Unallocated Student</small>
+            </a>
+          </div>
+        </div>
+
+        <form action="#view-student-portal">
+          <div class="form-group">
+            <label class="form-label" for="studentLoginId">Enter Student ID</label>
+            <input type="number" id="studentLoginId" class="form-input" placeholder="e.g. 101, 114, 126" min="101" max="140" value="101" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-full">Access My Student Dashboard &rarr;</button>
+        </form>
+      </div>
+
+      <!-- TAB 3: BUS / DRIVER LOGIN SECTION (3 SEPARATE REGULAR BUS DRIVERS) -->
+      <div class="login-section" id="loginSecDriver">
+        <div class="login-type-banner">
+          <strong>Bus Driver Cockpit &amp; Run Sheet</strong>
+          <span>Each regular bus has its own distinct driver account. Drivers view only their assigned bus, route stops, and riders.</span>
+        </div>
+
+        <div class="quick-login-box">
+          <span class="quick-label">Select Driver Account (3 Separate Regular Buses):</span>
+          <div class="driver-account-selector">
+            
+            <a href="#view-driver-1" class="driver-card-btn">
+              <div class="driver-card-icon">1</div>
+              <div class="driver-card-info">
+                <strong>Bus 1 &mdash; Driver 1 Account</strong>
+                <span>Murugan K &bull; TN-09-CB-101 (Route A: South)</span>
+                <small>Allocated: 10 Students &bull; Tambaram, Chromepet, Guindy</small>
+              </div>
+            </a>
+
+            <a href="#view-driver-2" class="driver-card-btn">
+              <div class="driver-card-icon">2</div>
+              <div class="driver-card-info">
+                <strong>Bus 2 &mdash; Driver 2 Account</strong>
+                <span>Senthil P &bull; TN-09-CB-102 (Route B: West)</span>
+                <small>Allocated: 15 Students &bull; Porur, Koyambedu, Anna Nagar</small>
+              </div>
+            </a>
+
+            <a href="#view-driver-3" class="driver-card-btn">
+              <div class="driver-card-icon">3</div>
+              <div class="driver-card-info">
+                <strong>Bus 3 &mdash; Driver 3 Account</strong>
+                <span>Velu M &bull; TN-09-CB-103 (Route C: East)</span>
+                <small>Allocated: 10 Students &bull; Adyar, Thiruvanmiyur, Velachery</small>
+              </div>
+            </a>
+
+          </div>
+        </div>
+
+        <div class="prototype-footnote">
+          <span class="badge badge-neutral">STANDBY FLEET</span>
+          <span>Mini Bus is an emergency replacement shuttle controlled by Admin during breakdowns (no driver login).</span>
+        </div>
+      </div>
+
+      <div class="login-card-footer">
+        <a href="#view-admin-dashboard" class="btn btn-outline btn-sm w-full">Enter Campus Dashboard &rarr;</a>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       2. AUTHENTICATED APP SHELL
+       ========================================================================= -->
+  <div class="app-layout" id="appShell">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2 10.9 2 11.2 2 11.5V16c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h2>CampusTransit</h2>
+          <span class="sub-label">College Management</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links Container -->
+      <nav class="sidebar-nav" id="sidebarNav">
+        
+        <div class="nav-section-label">ADMINISTRATION</div>
+        
+        <a href="#view-admin-dashboard" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          Command Center
+        </a>
+
+        <a href="#view-students" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Student Directory
+        </a>
+
+        <a href="#view-buses" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>
+          Bus Fleet &amp; Allocation
+        </a>
+
+        <a href="#view-attendance" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Daily Attendance
+        </a>
+
+        <a href="#view-requirements" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          Tomorrow's Demand
+        </a>
+
+        <a href="#view-routes" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>
+          Route Corridors
+        </a>
+
+        <a href="#view-breakdowns" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Fleet Breakdown Hub
+        </a>
+
+        <a href="#view-fees" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+          Fee Ledger (₹12,000)
+        </a>
+
+        <a href="#view-eligibility" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Java Eligibility Manifest
+        </a>
+
+        <a href="#view-complaints" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Grievance Desk
+        </a>
+
+        <div class="nav-section-label mt-3">DRIVER COCKPITS</div>
+
+        <a href="#view-driver-1" class="nav-item">
+          <span class="nav-badge-pill bg-blue-soft text-blue">1</span>
+          Driver 1 &bull; Bus 1 (Murugan)
+        </a>
+
+        <a href="#view-driver-2" class="nav-item">
+          <span class="nav-badge-pill bg-indigo-soft text-indigo">2</span>
+          Driver 2 &bull; Bus 2 (Senthil)
+        </a>
+
+        <a href="#view-driver-3" class="nav-item">
+          <span class="nav-badge-pill bg-emerald-soft text-emerald">3</span>
+          Driver 3 &bull; Bus 3 (Velu)
+        </a>
+
+        <div class="nav-section-label mt-3">STUDENT PORTAL</div>
+
+        <a href="#view-student-portal" class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+          Student Transit Card
+        </a>
+
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status-box">
+          <span class="status-dot"></span>
+          <span class="status-text">Fleet: 3 Regular &bull; 1 Standby</span>
+        </div>
+        <a href="#loginScreen" class="btn btn-outline-light btn-sm w-full mt-2">
+          Switch Role / Sign Out
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      
+      <!-- Quick Role Switcher Banner -->
+      <div class="role-switcher-banner">
+        <span class="role-switcher-title">Portal Persona:</span>
+        <div class="role-switcher-links">
+          <a href="#view-admin-dashboard" class="role-pill active">Admin Console</a>
+          <a href="#view-driver-1" class="role-pill">Driver 1 (Bus 1)</a>
+          <a href="#view-driver-2" class="role-pill">Driver 2 (Bus 2)</a>
+          <a href="#view-driver-3" class="role-pill">Driver 3 (Bus 3)</a>
+          <a href="#view-student-portal" class="role-pill">Student Portal (#101)</a>
+          <a href="#loginScreen" class="role-pill role-pill-logout">Sign In / Switch</a>
+        </div>
+      </div>
+
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="breadcrumb">
+            <span class="breadcrumb-prefix">Smart Transport</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">College Bus Management System</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="system-status">
+            <span class="status-dot"></span>
+            <span class="status-label">3 Regular Buses Active &bull; Standby Shuttle Ready</span>
+          </div>
+
+          <div class="user-pill">
+            <div class="user-avatar">AD</div>
+            <div class="user-details">
+              <span class="user-name">Transport Admin</span>
+              <span class="user-role">Transportation Office</span>
+            </div>
+            <a href="#loginScreen" class="btn btn-outline btn-sm btn-logout" title="Switch Role">
+              Sign Out
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Body Container -->
+      <main class="content-area">
+        
+        <!-- ===================================================================
+             VIEW 1: ADMIN DASHBOARD
+             =================================================================== -->
+        <section class="view-panel" id="view-admin-dashboard">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Admin Transit Command Center</h1>
+              <p class="view-subtitle">Full administrative authority over student allocation, bus fleet capacities, breakdown recovery, and student complaints.</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-add-student" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                + Enroll Student
+              </a>
+              <a href="#view-breakdowns" class="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Breakdown &amp; Fleet Alerts
+              </a>
+            </div>
+          </div>
+
+          <!-- Standby Shuttle Status Banner -->
+          <div class="alert-banner alert-info mb-6" id="admin-standby-banner">
+            <div class="alert-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </div>
+            <div class="alert-content" id="admin-standby-content">
+              <strong id="admin-standby-title">Emergency Standby Mini Bus Active</strong>
+              <p id="admin-standby-text">Vehicle <code>TN-09-MB-201</code> (10 seats) is on standby at central depot. In the event of a regular bus breakdown, Admin can trigger the Recovery Wizard to reassign stranded passengers.</p>
+            </div>
+            <a href="#modal-breakdown-wizard" class="btn btn-primary btn-sm" id="admin-standby-btn">Recovery Wizard</a>
+          </div>
+
+          <!-- Metric Cards Grid -->
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Total Registered Students</span>
+                  <div class="metric-value">40</div>
+                  <span class="metric-trend text-blue">40 Students in Database</span>
+                </div>
+                <div class="metric-icon-box bg-blue-soft text-blue">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Regular Fleet Buses</span>
+                  <div class="metric-value">3</div>
+                  <span class="metric-trend text-indigo">50 Total Regular Seats</span>
+                </div>
+                <div class="metric-icon-box bg-indigo-soft text-indigo">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Riders Expected Tomorrow</span>
+                  <div class="metric-value">27</div>
+                  <span class="metric-trend text-amber">Travel intentions declared</span>
+                </div>
+                <div class="metric-icon-box bg-amber-soft text-amber">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card border-accent-highlight">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Java Eligible to Board</span>
+                  <div class="metric-value text-emerald">22</div>
+                  <span class="metric-trend text-emerald">Auth + Present + Req</span>
+                </div>
+                <div class="metric-icon-box bg-emerald-soft text-emerald">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Operating Normally</span>
+                  <div class="metric-value text-emerald">3</div>
+                  <span class="metric-trend text-emerald">3 Buses on schedule</span>
+                </div>
+                <div class="metric-icon-box bg-emerald-soft text-emerald">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Buses with Breakdowns</span>
+                  <div class="metric-value text-rose">0</div>
+                  <span class="metric-trend text-rose">0 fleet incidents</span>
+                </div>
+                <div class="metric-icon-box bg-rose-soft text-rose">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Unallocated Students</span>
+                  <div class="metric-value text-amber">5</div>
+                  <span class="metric-trend text-amber">Awaiting bus assignment</span>
+                </div>
+                <div class="metric-icon-box bg-amber-soft text-amber">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-card-inner">
+                <div>
+                  <span class="metric-label">Active Grievance Tickets</span>
+                  <div class="metric-value text-rose">2</div>
+                  <span class="metric-trend text-rose">2 Open &bull; 1 Resolved</span>
+                </div>
+                <div class="metric-icon-box bg-rose-soft text-rose">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Allocation Snapshot (10 on Bus 1, 15 on Bus 2, 10 on Bus 3) -->
+          <div class="content-card mt-6">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Fleet Allocation &amp; Seating Snapshot</h3>
+                <p class="card-subtitle">Exact baseline: 10 students on Bus 1 &bull; 15 on Bus 2 &bull; 10 on Bus 3 &bull; 5 Unallocated &bull; 1 Standby Mini Bus</p>
+              </div>
+              <a href="#view-buses" class="btn btn-outline btn-sm">Manage Seating Limits</a>
+            </div>
+            <div class="card-body p-6">
+              <div class="allocation-summary-bar">
+                <div class="alloc-box">
+                  <span class="alloc-badge bg-blue-soft text-blue">Bus 1 (Standard)</span>
+                  <strong>10 / 15 Assigned</strong>
+                  <small>5 seats available &bull; Driver Murugan K</small>
+                </div>
+                <div class="alloc-box">
+                  <span class="alloc-badge bg-indigo-soft text-indigo">Bus 2 (Standard)</span>
+                  <strong>15 / 20 Assigned</strong>
+                  <small>5 seats available &bull; Driver Senthil P</small>
+                </div>
+                <div class="alloc-box">
+                  <span class="alloc-badge bg-emerald-soft text-emerald">Bus 3 (Standard)</span>
+                  <strong>10 / 15 Assigned</strong>
+                  <small>5 seats available &bull; Driver Velu M</small>
+                </div>
+                <div class="alloc-box border-warning">
+                  <span class="alloc-badge bg-amber-soft text-amber">Unallocated</span>
+                  <strong class="text-amber">5 Students</strong>
+                  <small>IDs 136 - 140 awaiting seats</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Modules -->
+          <h2 class="section-title mt-6">Administrative Transit Modules</h2>
+          <div class="modules-grid">
+            
+            <a href="#view-students" class="module-card">
+              <div class="module-icon bg-blue-soft text-blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <h4>Student Directory</h4>
+              <p>Inspect all 40 enrolled students, pickup stops, pass authorizations, and regular bus assignments.</p>
+            </a>
+
+            <a href="#view-buses" class="module-card">
+              <div class="module-icon bg-indigo-soft text-indigo">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>
+              </div>
+              <h4>Bus Fleet &amp; Capacity</h4>
+              <p>Review vehicle limits, driver contact info, allocated riders, and reassign students strictly within seat caps.</p>
+            </a>
+
+            <a href="#view-attendance" class="module-card">
+              <div class="module-icon bg-emerald-soft text-emerald">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <h4>Attendance &amp; Safe Boarding</h4>
+              <p>Separate campus attendance records from vehicle boarding status (Boarded vs Pending vs Not Traveling).</p>
+            </a>
+
+            <a href="#view-breakdowns" class="module-card">
+              <div class="module-icon bg-rose-soft text-rose">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              </div>
+              <h4>Breakdown Operations</h4>
+              <p>Real-time vehicle status monitoring and deployment of standby Mini Bus with delay announcements.</p>
+            </a>
+
+            <a href="#view-fees" class="module-card">
+              <div class="module-icon bg-amber-soft text-amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+              </div>
+              <h4>Transport Fee Ledger</h4>
+              <p>Track annual ₹12,000 transport fee payments, clearance receipts, and outstanding dues across all students.</p>
+            </a>
+
+            <a href="#view-complaints" class="module-card">
+              <div class="module-icon bg-purple-soft text-purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <h4>Grievance Desk</h4>
+              <p>Review student feedback regarding delays, vehicle cleanliness, and overcrowding with administrative status notes.</p>
+            </a>
+
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 2: STUDENT DIRECTORY (ALL 40 STUDENTS)
+             =================================================================== -->
+        <section class="view-panel" id="view-students">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Student Transportation Directory</h1>
+              <p class="view-subtitle">Only Administrator can enroll students, update pickup stops, authorize passes, and manage bus allocations.</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-add-student" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                + Add Student
+              </a>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Enrolled Student Profiles (40 Registered)</h3>
+                <p class="card-subtitle">Showing full institutional roster: 10 on Bus 1 &bull; 15 on Bus 2 &bull; 10 on Bus 3 &bull; 5 Unallocated</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Pickup Stop</th>
+                    <th>Transport Pass</th>
+                    <th>Assigned Vehicle</th>
+                    <th>Fee Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="student-table-body">
+                  <!-- BUS 1 (10 STUDENTS) -->
+                  <tr><td><strong>#101</strong></td><td>Rahul Sharma</td><td>Tambaram</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#102</strong></td><td>Priya Nair</td><td>Chromepet</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#103</strong></td><td>Karthik Raj</td><td>Guindy</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#104</strong></td><td>Sneha Reddy</td><td>Tambaram</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#105</strong></td><td>Arun Kumar</td><td>Chromepet</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#106</strong></td><td>Divya Balan</td><td>Guindy</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#107</strong></td><td>Vignesh S</td><td>Tambaram</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#108</strong></td><td>Meera Krishnan</td><td>Chromepet</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#109</strong></td><td>Ananya Ramesh</td><td>Guindy</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#110</strong></td><td>Harish V</td><td>Tambaram</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-info">Bus 1 (TN-09-CB-101)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+
+                  <!-- BUS 2 (15 STUDENTS) -->
+                  <tr><td><strong>#111</strong></td><td>Pooja Sundaram</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#112</strong></td><td>Siddharth M</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#113</strong></td><td>Kavyashree P</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#114</strong></td><td>Deepa L</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#115</strong></td><td>Gautham B</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#116</strong></td><td>Roshni J</td><td>Anna Nagar</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#117</strong></td><td>Sanjay R</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#118</strong></td><td>Preeti K</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#119</strong></td><td>Ashwin N</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#120</strong></td><td>Nithya S</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#121</strong></td><td>Manoj C</td><td>Koyambedu</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#122</strong></td><td>Lavanya T</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#123</strong></td><td>Keerthana S</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#124</strong></td><td>Rajesh G</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#125</strong></td><td>Swetha V</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-indigo">Bus 2 (TN-09-CB-102)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+
+                  <!-- BUS 3 (10 STUDENTS) -->
+                  <tr><td><strong>#126</strong></td><td>Deepak R</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#127</strong></td><td>Shalini M</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#128</strong></td><td>Akash V</td><td>Adyar</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#129</strong></td><td>Pavithra K</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#130</strong></td><td>Varun P</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#131</strong></td><td>Sandhya S</td><td>Adyar</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#132</strong></td><td>Vikram N</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#133</strong></td><td>Archana R</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#134</strong></td><td>Gokul D</td><td>Adyar</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+                  <tr><td><strong>#135</strong></td><td>Tharun K</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-emerald">Bus 3 (TN-09-CB-103)</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn-table-action">Reassign</a></td></tr>
+
+                  <!-- UNALLOCATED (5 STUDENTS) -->
+                  <tr><td><strong>#136</strong></td><td>Malini V</td><td>Tambaram</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-warning">Unallocated</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Assign Bus</a></td></tr>
+                  <tr><td><strong>#137</strong></td><td>Naveen S</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-warning">Unallocated</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Assign Bus</a></td></tr>
+                  <tr><td><strong>#138</strong></td><td>Yamini B</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-warning">Unallocated</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Assign Bus</a></td></tr>
+                  <tr><td><strong>#139</strong></td><td>Rithika M</td><td>Guindy</td><td><span class="badge badge-success">Authorized</span></td><td><span class="badge badge-warning">Unallocated</span></td><td><span class="badge badge-success">₹12,000 Paid</span></td><td><a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Assign Bus</a></td></tr>
+                  <tr><td><strong>#140</strong></td><td>Pranav K</td><td>Anna Nagar</td><td><span class="badge badge-danger">Unauthorized</span></td><td><span class="badge badge-warning">Unallocated</span></td><td><span class="badge badge-warning">Unpaid</span></td><td><a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Assign Bus</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 3: BUS FLEET & CAPACITY ALLOCATION
+             =================================================================== -->
+        <section class="view-panel" id="view-buses">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Bus Fleet Capacity &amp; Student Allocation</h1>
+              <p class="view-subtitle">Admin sets capacities and assigns students. The system strictly prevents students from exceeding vehicle seat limit.</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-edit-capacity" class="btn btn-primary">
+                Configure Capacity Limits
+              </a>
+            </div>
+          </div>
+
+          <div class="bus-cards-grid" id="bus-cards-container">
+            
+            <!-- BUS 1 -->
+            <div class="bus-card">
+              <div class="bus-card-header">
+                <div>
+                  <span class="bus-type-badge">Standard Bus</span>
+                  <h3 class="bus-card-title">Bus 1 &bull; Route A (South)</h3>
+                  <span class="bus-card-reg">Reg: TN-09-CB-101</span>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="bus-card-body">
+                <div class="bus-spec-row">
+                  <span>Assigned Driver:</span>
+                  <strong>Murugan K (Ph: 98401 23456)</strong>
+                </div>
+                <div class="bus-spec-row">
+                  <span>Corridor Stops:</span>
+                  <span>Tambaram &bull; Chromepet &bull; Guindy</span>
+                </div>
+                <div class="bus-capacity-bar-wrapper">
+                  <div class="bus-cap-label">
+                    <span>Seating Occupancy</span>
+                    <strong>10 / 15 Assigned (67%)</strong>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill bg-blue" style="width: 67%;"></div>
+                  </div>
+                  <small class="text-emerald"><strong>5 Seats Available</strong> &mdash; Safe allocation margin</small>
+                </div>
+              </div>
+              <div class="bus-card-footer">
+                <a href="#view-driver-1" class="btn btn-outline btn-sm">View Driver 1 Run Sheet</a>
+                <a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Change Capacity</a>
+              </div>
+            </div>
+
+            <!-- BUS 2 -->
+            <div class="bus-card">
+              <div class="bus-card-header">
+                <div>
+                  <span class="bus-type-badge">Standard Bus</span>
+                  <h3 class="bus-card-title">Bus 2 &bull; Route B (West)</h3>
+                  <span class="bus-card-reg">Reg: TN-09-CB-102</span>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="bus-card-body">
+                <div class="bus-spec-row">
+                  <span>Assigned Driver:</span>
+                  <strong>Senthil P (Ph: 98402 34567)</strong>
+                </div>
+                <div class="bus-spec-row">
+                  <span>Corridor Stops:</span>
+                  <span>Porur &bull; Koyambedu &bull; Anna Nagar</span>
+                </div>
+                <div class="bus-capacity-bar-wrapper">
+                  <div class="bus-cap-label">
+                    <span>Seating Occupancy</span>
+                    <strong>15 / 20 Assigned (75%)</strong>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill bg-indigo" style="width: 75%;"></div>
+                  </div>
+                  <small class="text-emerald"><strong>5 Seats Available</strong> &mdash; Safe allocation margin</small>
+                </div>
+              </div>
+              <div class="bus-card-footer">
+                <a href="#view-driver-2" class="btn btn-outline btn-sm">View Driver 2 Run Sheet</a>
+                <a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Change Capacity</a>
+              </div>
+            </div>
+
+            <!-- BUS 3 -->
+            <div class="bus-card">
+              <div class="bus-card-header">
+                <div>
+                  <span class="bus-type-badge">Standard Bus</span>
+                  <h3 class="bus-card-title">Bus 3 &bull; Route C (East)</h3>
+                  <span class="bus-card-reg">Reg: TN-09-CB-103</span>
+                </div>
+                <span class="badge badge-success">Active</span>
+              </div>
+              <div class="bus-card-body">
+                <div class="bus-spec-row">
+                  <span>Assigned Driver:</span>
+                  <strong>Velu M (Ph: 98403 45678)</strong>
+                </div>
+                <div class="bus-spec-row">
+                  <span>Corridor Stops:</span>
+                  <span>Adyar &bull; Thiruvanmiyur &bull; Velachery</span>
+                </div>
+                <div class="bus-capacity-bar-wrapper">
+                  <div class="bus-cap-label">
+                    <span>Seating Occupancy</span>
+                    <strong>10 / 15 Assigned (67%)</strong>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill bg-emerald" style="width: 67%;"></div>
+                  </div>
+                  <small class="text-emerald"><strong>5 Seats Available</strong> &mdash; Safe allocation margin</small>
+                </div>
+              </div>
+              <div class="bus-card-footer">
+                <a href="#view-driver-3" class="btn btn-outline btn-sm">View Driver 3 Run Sheet</a>
+                <a href="#modal-edit-capacity" class="btn btn-primary btn-sm">Change Capacity</a>
+              </div>
+            </div>
+
+            <!-- STANDBY MINI BUS -->
+            <div class="bus-card border-accent-highlight">
+              <div class="bus-card-header bg-slate-soft">
+                <div>
+                  <span class="bus-type-badge bg-amber-soft text-amber">Emergency Standby</span>
+                  <h3 class="bus-card-title">Mini Bus (Standby Shuttle)</h3>
+                  <span class="bus-card-reg">Reg: TN-09-MB-201</span>
+                </div>
+                <span class="badge badge-neutral">Standby Depot</span>
+              </div>
+              <div class="bus-card-body">
+                <div class="bus-spec-row">
+                  <span>Standby Driver:</span>
+                  <strong>Dharmalingam (Ph: 98404 56789)</strong>
+                </div>
+                <div class="bus-spec-row">
+                  <span>Deployment Role:</span>
+                  <span>Emergency relief shuttle for breakdowns</span>
+                </div>
+                <div class="bus-capacity-bar-wrapper">
+                  <div class="bus-cap-label">
+                    <span>Shuttle Capacity</span>
+                    <strong>0 / 10 Assigned (100% Free)</strong>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill bg-emerald" style="width: 0%;"></div>
+                  </div>
+                  <small class="text-blue"><strong>10 Standby Seats</strong> &mdash; Ready for quick dispatch</small>
+                </div>
+              </div>
+              <div class="bus-card-footer">
+                <a href="#modal-breakdown-wizard" class="btn btn-danger btn-sm w-full">Deploy Mini Bus Shuttle</a>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 4: DAILY ATTENDANCE & BOARDING STATUS
+             =================================================================== -->
+        <section class="view-panel" id="view-attendance">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Campus Attendance vs Safe Boarding Status</h1>
+              <p class="view-subtitle">Separates institutional attendance from bus boarding: students can be physically present on campus without having boarded the college bus.</p>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <div>
+                <h3 class="card-title">Institutional Boarding Manifest</h3>
+                <p class="card-subtitle">Boarding status is verified at physical pickup stops: Boarded, Pending, or Not Traveling</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <label for="attendanceDatePicker" style="font-weight:600;font-size:13px;color:var(--slate-700);">Date:</label>
+                <input type="date" id="attendanceDatePicker" class="form-input" style="padding:4px 10px;font-size:13px;width:auto;">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Vehicle</th>
+                    <th>Pickup Stop</th>
+                    <th>Campus Attendance</th>
+                    <th>Safe Boarding Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="attendance-table-body">
+                  <tr><td>#101</td><td>Rahul Sharma</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#102</td><td>Priya Nair</td><td>Bus 1</td><td>Chromepet</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#103</td><td>Karthik Raj</td><td>Bus 1</td><td>Guindy</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#104</td><td>Sneha Reddy</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-danger">Absent</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#105</td><td>Arun Kumar</td><td>Bus 1</td><td>Chromepet</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-success">Boarded</span></td></tr>
+                  <tr><td>#106</td><td>Divya Balan</td><td>Bus 1</td><td>Guindy</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#107</td><td>Vignesh S</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-danger">Absent</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#108</td><td>Meera Krishnan</td><td>Bus 1</td><td>Chromepet</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#109</td><td>Ananya Ramesh</td><td>Bus 1</td><td>Guindy</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-success">Boarded</span></td></tr>
+                  <tr><td>#110</td><td>Harish V</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  
+                  <tr><td>#111</td><td>Pooja Sundaram</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#112</td><td>Siddharth M</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#113</td><td>Kavyashree P</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#114</td><td>Deepa L</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#115</td><td>Gautham B</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-success">Boarded</span></td></tr>
+                  <tr><td>#116</td><td>Roshni J</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#117</td><td>Sanjay R</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-danger">Absent</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#118</td><td>Preeti K</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#119</td><td>Ashwin N</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#120</td><td>Nithya S</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-success">Boarded</span></td></tr>
+                  <tr><td>#121</td><td>Manoj C</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#122</td><td>Lavanya T</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#123</td><td>Keerthana S</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#124</td><td>Rajesh G</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-danger">Absent</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#125</td><td>Swetha V</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+
+                  <tr><td>#126</td><td>Deepak R</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#127</td><td>Shalini M</td><td>Bus 3</td><td>Velachery</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-success">Boarded</span></td></tr>
+                  <tr><td>#128</td><td>Akash V</td><td>Bus 3</td><td>Adyar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#129</td><td>Pavithra K</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#130</td><td>Varun P</td><td>Bus 3</td><td>Velachery</td><td><span class="badge badge-danger">Absent</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#131</td><td>Sandhya S</td><td>Bus 3</td><td>Adyar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#132</td><td>Vikram N</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#133</td><td>Archana R</td><td>Bus 3</td><td>Velachery</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#134</td><td>Gokul D</td><td>Bus 3</td><td>Adyar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#135</td><td>Tharun K</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+
+                  <tr><td>#136</td><td>Malini V</td><td>Unallocated</td><td>Tambaram</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>#137</td><td>Naveen S</td><td>Unallocated</td><td>Porur</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#138</td><td>Yamini B</td><td>Unallocated</td><td>Velachery</td><td><span class="badge badge-danger">Absent</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#139</td><td>Rithika M</td><td>Unallocated</td><td>Guindy</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-warning">Pending</span></td></tr>
+                  <tr><td>#140</td><td>Pranav K</td><td>Unallocated</td><td>Anna Nagar</td><td><span class="badge badge-success">Present</span></td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 5: TOMORROW'S BUS DEMAND REQUIREMENTS
+             =================================================================== -->
+        <section class="view-panel" id="view-requirements">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Bus Requirements for Tomorrow</h1>
+              <p class="view-subtitle">Real-time compilation of student travel intentions declared for tomorrow's campus transit operations.</p>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <div>
+                <h3 class="card-title" id="requirements-card-title">Declared Intentions</h3>
+                <p class="card-subtitle">Transport coordinators plan route dispatches according to declared demand</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <label for="requirementsDatePicker" style="font-weight:600;font-size:13px;color:var(--slate-700);">Date:</label>
+                <input type="date" id="requirementsDatePicker" class="form-input" style="padding:4px 10px;font-size:13px;width:auto;">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Assigned Bus</th>
+                    <th>Pickup Stop</th>
+                    <th>Bus Required Tomorrow?</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="requirements-table-body">
+                  <tr><td>#101</td><td>Rahul Sharma</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#102</td><td>Priya Nair</td><td>Bus 1</td><td>Chromepet</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#103</td><td>Karthik Raj</td><td>Bus 1</td><td>Guindy</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#104</td><td>Sneha Reddy</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#105</td><td>Arun Kumar</td><td>Bus 1</td><td>Chromepet</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#106</td><td>Divya Balan</td><td>Bus 1</td><td>Guindy</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#107</td><td>Vignesh S</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#108</td><td>Meera Krishnan</td><td>Bus 1</td><td>Chromepet</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#109</td><td>Ananya Ramesh</td><td>Bus 1</td><td>Guindy</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#110</td><td>Harish V</td><td>Bus 1</td><td>Tambaram</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#111</td><td>Pooja Sundaram</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#112</td><td>Siddharth M</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#113</td><td>Kavyashree P</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#114</td><td>Deepa L</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#115</td><td>Gautham B</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#116</td><td>Roshni J</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#117</td><td>Sanjay R</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#118</td><td>Preeti K</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#119</td><td>Ashwin N</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#120</td><td>Nithya S</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#121</td><td>Manoj C</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#122</td><td>Lavanya T</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#123</td><td>Keerthana S</td><td>Bus 2</td><td>Porur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#124</td><td>Rajesh G</td><td>Bus 2</td><td>Koyambedu</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#125</td><td>Swetha V</td><td>Bus 2</td><td>Anna Nagar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#126</td><td>Deepak R</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#127</td><td>Shalini M</td><td>Bus 3</td><td>Velachery</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#128</td><td>Akash V</td><td>Bus 3</td><td>Adyar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#129</td><td>Pavithra K</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#130</td><td>Varun P</td><td>Bus 3</td><td>Velachery</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#131</td><td>Sandhya S</td><td>Bus 3</td><td>Adyar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#132</td><td>Vikram N</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#133</td><td>Archana R</td><td>Bus 3</td><td>Velachery</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#134</td><td>Gokul D</td><td>Bus 3</td><td>Adyar</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#135</td><td>Tharun K</td><td>Bus 3</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#136</td><td>Malini V</td><td>Unallocated</td><td>Tambaram</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                  <tr><td>#137</td><td>Naveen S</td><td>Unallocated</td><td>Porur</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#138</td><td>Yamini B</td><td>Unallocated</td><td>Velachery</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#139</td><td>Rithika M</td><td>Unallocated</td><td>Guindy</td><td><span class="badge badge-success">Yes (Required)</span></td></tr>
+                  <tr><td>#140</td><td>Pranav K</td><td>Unallocated</td><td>Anna Nagar</td><td><span class="badge badge-neutral">No (Self Commute)</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 6: ROUTE CORRIDORS & STOPS
+             =================================================================== -->
+        <section class="view-panel" id="view-routes">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Designated Transit Corridors</h1>
+              <p class="view-subtitle">Physical pickup stops, road infrastructure types, scheduled arrival windows, and vehicle assignments.</p>
+            </div>
+          </div>
+
+          <div class="route-corridors-grid" id="route-cards-container">
+            
+            <div class="route-card">
+              <div class="route-card-header bg-blue-soft">
+                <span class="route-tag text-blue">Route A &bull; South Corridor</span>
+                <h4>Bus 1 &bull; TN-09-CB-101</h4>
+              </div>
+              <div class="route-stops-list">
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>1. Tambaram Junction</strong>
+                    <span>Scheduled Time: 07:15 AM &bull; Road: Wide Arterial</span>
+                  </div>
+                </div>
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>2. Chromepet Bus Shelter</strong>
+                    <span>Scheduled Time: 07:30 AM &bull; Road: Wide Arterial</span>
+                  </div>
+                </div>
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>3. Guindy Metro Hub</strong>
+                    <span>Scheduled Time: 07:55 AM &bull; Road: Wide Arterial</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="route-card">
+              <div class="route-card-header bg-indigo-soft">
+                <span class="route-tag text-indigo">Route B &bull; West Corridor</span>
+                <h4>Bus 2 &bull; TN-09-CB-102</h4>
+              </div>
+              <div class="route-stops-list">
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>1. Porur Roundabout</strong>
+                    <span>Scheduled Time: 07:20 AM &bull; Road: Normal Urban</span>
+                  </div>
+                </div>
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>2. Koyambedu Market Point</strong>
+                    <span>Scheduled Time: 07:40 AM &bull; Road: Normal Urban</span>
+                  </div>
+                </div>
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>3. Anna Nagar Roundtana</strong>
+                    <span>Scheduled Time: 08:00 AM &bull; Road: Normal Urban</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="route-card">
+              <div class="route-card-header bg-emerald-soft">
+                <span class="route-tag text-emerald">Route C &bull; East Corridor</span>
+                <h4>Bus 3 &bull; TN-09-CB-103</h4>
+              </div>
+              <div class="route-stops-list">
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>1. Adyar Depot Terminal</strong>
+                    <span>Scheduled Time: 07:25 AM &bull; Road: Narrow Coastal</span>
+                  </div>
+                </div>
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>2. Thiruvanmiyur Signal</strong>
+                    <span>Scheduled Time: 07:45 AM &bull; Road: Narrow Coastal</span>
+                  </div>
+                </div>
+                <div class="route-stop-item">
+                  <span class="stop-dot"></span>
+                  <div class="stop-info">
+                    <strong>3. Velachery Aquatic Complex</strong>
+                    <span>Scheduled Time: 08:05 AM &bull; Road: Normal Urban</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 7: FLEET BREAKDOWN & RECOVERY OPERATIONS HUB
+             =================================================================== -->
+        <section class="view-panel" id="view-breakdowns">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Fleet Breakdown &amp; Incident Operations Hub</h1>
+              <p class="view-subtitle">Monitor real-time vehicle statuses. When a bus reports a mechanical breakdown, deploy the standby Mini Bus to reassign waiting passengers.</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-breakdown-wizard" class="btn btn-danger">
+                Deploy Emergency Mini Bus Shuttle
+              </a>
+            </div>
+          </div>
+
+          <!-- Standby Mini Bus Highlight Card -->
+          <div class="content-card mb-6">
+            <div class="card-header bg-blue-soft">
+              <div>
+                <h3 class="card-title text-navy">Emergency Relief Vehicle Protocol</h3>
+                <p class="card-subtitle">Depot Standby: Mini Bus TN-09-MB-201 (Capacity: 10 Seats)</p>
+              </div>
+              <span class="badge badge-success" id="standby-depot-badge">Standby Ready</span>
+            </div>
+            <div class="card-body p-6">
+              <p>In accordance with the institutional transportation safety standards, the college maintains an on-call 10-seater Mini Bus. If any of the regular buses suffer a puncture or engine failure during morning transit, the Transportation Admin initiates passenger transfer.</p>
+              <div class="fleet-protocol-steps mt-4">
+                <div class="protocol-step">
+                  <strong>Step 1</strong>
+                  <span>Driver reports incident via cockpit</span>
+                </div>
+                <div class="protocol-step">
+                  <strong>Step 2</strong>
+                  <span>Admin verifies already-boarded riders</span>
+                </div>
+                <div class="protocol-step">
+                  <strong>Step 3</strong>
+                  <span>Standby Mini Bus deployed to downstream stops</span>
+                </div>
+                <div class="protocol-step">
+                  <strong>Step 4</strong>
+                  <span>Estimated delay broadcast to student phones</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Fleet Status Table -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Live Regular Fleet Diagnostic Monitor</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Bus ID</th>
+                    <th>Registration</th>
+                    <th>Driver Name</th>
+                    <th>Route</th>
+                    <th>Operating Status</th>
+                    <th>Active Delay</th>
+                    <th>Emergency Action</th>
+                  </tr>
+                </thead>
+                <tbody id="fleet-diagnostics-table-body">
+                  <tr>
+                    <td><strong>Bus 1</strong></td>
+                    <td>TN-09-CB-101</td>
+                    <td>Murugan K</td>
+                    <td>Route A (South)</td>
+                    <td><span class="badge badge-success">Active &bull; Normal</span></td>
+                    <td>0 Mins</td>
+                    <td><a href="#modal-breakdown-wizard" class="btn btn-outline btn-sm">Report Issue</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Bus 2</strong></td>
+                    <td>TN-09-CB-102</td>
+                    <td>Senthil P</td>
+                    <td>Route B (West)</td>
+                    <td><span class="badge badge-success">Active &bull; Normal</span></td>
+                    <td>0 Mins</td>
+                    <td><a href="#modal-breakdown-wizard" class="btn btn-outline btn-sm">Report Issue</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Bus 3</strong></td>
+                    <td>TN-09-CB-103</td>
+                    <td>Velu M</td>
+                    <td>Route C (East)</td>
+                    <td><span class="badge badge-success">Active &bull; Normal</span></td>
+                    <td>0 Mins</td>
+                    <td><a href="#modal-breakdown-wizard" class="btn btn-outline btn-sm">Report Issue</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Mini Bus</strong></td>
+                    <td>TN-09-MB-201</td>
+                    <td>Dharmalingam (Standby)</td>
+                    <td>Relief On-Call</td>
+                    <td><span class="badge badge-neutral">Standby Depot</span></td>
+                    <td>&mdash;</td>
+                    <td><a href="#modal-breakdown-wizard" class="btn btn-primary btn-sm">Deploy Now</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 8: TRANSPORT FEE LEDGER
+             =================================================================== -->
+        <section class="view-panel" id="view-fees">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Transport Fee Ledger (₹12,000 / Year)</h1>
+              <p class="view-subtitle">Official bursar records: Track transport fee payments required for college bus authorization.</p>
+            </div>
+          </div>
+
+          <div class="metric-grid mb-6">
+            <div class="metric-card">
+              <span class="metric-label">Prescribed Annual Fee</span>
+              <div class="metric-value text-blue">₹12,000</div>
+              <span class="metric-trend text-blue">Per student / academic year</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Paid Records</span>
+              <div class="metric-value text-emerald" id="fee-metric-paid-count">33 / 40</div>
+              <span class="metric-trend text-emerald" id="fee-metric-paid-total">₹3,96,000 Collected</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Outstanding Balances</span>
+              <div class="metric-value text-amber" id="fee-metric-pending-count">7 / 40</div>
+              <span class="metric-trend text-amber" id="fee-metric-pending-total">₹84,000 Pending</span>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Fee Collection Manifest</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Assigned Bus</th>
+                    <th>Fee Amount</th>
+                    <th>Payment Status</th>
+                    <th>Receipt Date</th>
+                    <th>Pass Clearance</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="fee-table-body">
+                  <tr><td>#101</td><td>Rahul Sharma</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-10</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#102</td><td>Priya Nair</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-12</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#103</td><td>Karthik Raj</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#104</td><td>Sneha Reddy</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-14</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#105</td><td>Arun Kumar</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-11</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#106</td><td>Divya Balan</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-15</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#107</td><td>Vignesh S</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#108</td><td>Meera Krishnan</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-16</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#109</td><td>Ananya Ramesh</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-10</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#110</td><td>Harish V</td><td>Bus 1</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-12</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  
+                  <tr><td>#111</td><td>Pooja Sundaram</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-13</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#112</td><td>Siddharth M</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#113</td><td>Kavyashree P</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-14</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#114</td><td>Deepa L</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-10</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#115</td><td>Gautham B</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-11</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#116</td><td>Roshni J</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#117</td><td>Sanjay R</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-12</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#118</td><td>Preeti K</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-13</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#119</td><td>Ashwin N</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-14</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#120</td><td>Nithya S</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-15</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#121</td><td>Manoj C</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#122</td><td>Lavanya T</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-16</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#123</td><td>Keerthana S</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-10</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#124</td><td>Rajesh G</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-11</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#125</td><td>Swetha V</td><td>Bus 2</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-10</td><td><span class="badge badge-success">Cleared</span></td></tr>
+
+                  <tr><td>#126</td><td>Deepak R</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-11</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#127</td><td>Shalini M</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-12</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#128</td><td>Akash V</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#129</td><td>Pavithra K</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-13</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#130</td><td>Varun P</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-14</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#131</td><td>Sandhya S</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-15</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#132</td><td>Vikram N</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-16</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#133</td><td>Archana R</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-10</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#134</td><td>Gokul D</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-12</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#135</td><td>Tharun K</td><td>Bus 3</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-13</td><td><span class="badge badge-success">Cleared</span></td></tr>
+
+                  <tr><td>#136</td><td>Malini V</td><td>Unallocated</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                  <tr><td>#137</td><td>Naveen S</td><td>Unallocated</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-14</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#138</td><td>Yamini B</td><td>Unallocated</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-15</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#139</td><td>Rithika M</td><td>Unallocated</td><td>₹12,000</td><td><span class="badge badge-success">Paid</span></td><td>2026-08-16</td><td><span class="badge badge-success">Cleared</span></td></tr>
+                  <tr><td>#140</td><td>Pranav K</td><td>Unallocated</td><td>₹12,000</td><td><span class="badge badge-warning">Unpaid</span></td><td>&mdash;</td><td><span class="badge badge-danger">Hold</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 9: JAVA ELIGIBILITY MANIFEST
+             =================================================================== -->
+        <section class="view-panel" id="view-eligibility">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Java Eligibility Manifest &amp; Rule Engine</h1>
+              <p class="view-subtitle">Demonstrates the core Java application rule: <code>isEligible = transportAuthorized &amp;&amp; present &amp;&amp; busRequired</code></p>
+            </div>
+          </div>
+
+          <div class="content-card mb-6">
+            <div class="card-header bg-emerald-soft">
+              <div>
+                <h3 class="card-title text-navy">Java Application Business Logic</h3>
+                <p class="card-subtitle">Exact matching with <code>Student.java</code> and <code>Main.java</code></p>
+              </div>
+            </div>
+            <div class="card-body p-6">
+              <div class="java-rule-box">
+                <code>
+                  boolean isEligibleToBoard = student.isTransportAuthorized() &amp;&amp; student.isPresent() &amp;&amp; student.isBusRequired();
+                </code>
+              </div>
+              <p class="mt-4">A student is qualified to board today's bus <strong>only if all three conditions evaluate to TRUE</strong>:</p>
+              <ul class="rule-bullets mt-2">
+                <li><strong>1. Transport Authorized:</strong> Approved annual pass and fee clearance recorded.</li>
+                <li><strong>2. Campus Attendance:</strong> Marked physically present for today's session.</li>
+                <li><strong>3. Travel Intention:</strong> Declared requirement for college bus commute tomorrow.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Eligibility Evaluation Roster (22 Qualified Students)</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Pass Authorized</th>
+                    <th>Attendance</th>
+                    <th>Bus Required</th>
+                    <th>Java Evaluation Result</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>#101</td><td>Rahul Sharma</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#102</td><td>Priya Nair</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
+                  <tr><td>#103</td><td>Karthik Raj</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
+                  <tr><td>#104</td><td>Sneha Reddy</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
+                  <tr><td>#105</td><td>Arun Kumar</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#106</td><td>Divya Balan</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
+                  <tr><td>#107</td><td>Vignesh S</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">&cross; Ineligible (All False)</span></td></tr>
+                  <tr><td>#108</td><td>Meera Krishnan</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#109</td><td>Ananya Ramesh</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#110</td><td>Harish V</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  
+                  <tr><td>#111</td><td>Pooja Sundaram</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#112</td><td>Siddharth M</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#113</td><td>Kavyashree P</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#114</td><td>Deepa L</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#115</td><td>Gautham B</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#116</td><td>Roshni J</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
+                  <tr><td>#117</td><td>Sanjay R</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
+                  <tr><td>#118</td><td>Preeti K</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#119</td><td>Ashwin N</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#120</td><td>Nithya S</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#121</td><td>Manoj C</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
+                  <tr><td>#122</td><td>Lavanya T</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#123</td><td>Keerthana S</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#124</td><td>Rajesh G</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
+                  <tr><td>#125</td><td>Swetha V</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+
+                  <tr><td>#126</td><td>Deepak R</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
+                  <tr><td>#127</td><td>Shalini M</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#128</td><td>Akash V</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
+                  <tr><td>#129</td><td>Pavithra K</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#130</td><td>Varun P</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
+                  <tr><td>#131</td><td>Sandhya S</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#132</td><td>Vikram N</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
+                  <tr><td>#133</td><td>Archana R</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#134</td><td>Gokul D</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                  <tr><td>#135</td><td>Tharun K</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 10: STUDENT GRIEVANCE DESK
+             =================================================================== -->
+        <section class="view-panel" id="view-complaints">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Student Grievances &amp; Complaints Desk</h1>
+              <p class="view-subtitle">Review, track, and resolve transport grievance tickets submitted by enrolled college bus passengers.</p>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Registered Grievance Tickets (3 Logged)</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticket ID</th>
+                    <th>Student</th>
+                    <th>Vehicle</th>
+                    <th>Issue Category</th>
+                    <th>Subject &amp; Details</th>
+                    <th>Submission Time</th>
+                    <th>Resolution Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>TKT-101</strong></td>
+                    <td>Rahul Sharma (#101)</td>
+                    <td>Bus 1</td>
+                    <td><span class="badge badge-warning">Delay / Punctuality</span></td>
+                    <td>
+                      <strong>Bus 1 delayed 20 mins at Tambaram stop</strong>
+                      <p class="table-detail-text">Bus arrived at 07:35 AM instead of 07:15 AM due to traffic, leading to delay in morning practical lab.</p>
+                    </td>
+                    <td>2026-10-10 08:15 AM</td>
+                    <td><span class="badge badge-danger">Open</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>TKT-102</strong></td>
+                    <td>Deepa L (#114)</td>
+                    <td>Bus 2</td>
+                    <td><span class="badge badge-danger">Overcrowding / Seating</span></td>
+                    <td>
+                      <strong>Heavy standing rush near Porur stop</strong>
+                      <p class="table-detail-text">Noticeable standing crowd near Porur junction during return trip. Requesting strict seating cap enforcement.</p>
+                    </td>
+                    <td>2026-10-09 04:30 PM</td>
+                    <td><span class="badge badge-success">Resolved</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>TKT-103</strong></td>
+                    <td>Deepak R (#126)</td>
+                    <td>Bus 3</td>
+                    <td><span class="badge badge-info">Vehicle Condition</span></td>
+                    <td>
+                      <strong>Window latch stuck on Bus 3 right side</strong>
+                      <p class="table-detail-text">Window near seat row 4 was jammed during light drizzle this morning. Please inspect and service.</p>
+                    </td>
+                    <td>2026-10-11 08:00 AM</td>
+                    <td><span class="badge badge-danger">Open</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 11: STUDENT TRANSIT PORTAL (STUDENT #101 RAHUL SHARMA)
+             =================================================================== -->
+        <section class="view-panel" id="view-student-portal">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Student Transit Hub</h1>
+              <p class="view-subtitle">Digital student pass, pickup timings, tomorrow travel intention declaration, and feedback channel.</p>
+            </div>
+            <div class="header-actions">
+              <span class="badge badge-info font-bold">Logged In: #101 Rahul Sharma</span>
+              <a href="#loginScreen" class="btn btn-outline btn-sm">Switch Student</a>
+            </div>
+          </div>
+
+          <!-- Student Breakdown / Delay Notice Banner (Live broadcast from backend) -->
+          <div class="alert-banner alert-warning mb-6" id="student-portal-delay-notice" style="display: none;">
+            <div class="alert-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="alert-content">
+              <strong id="student-portal-delay-title">Live Transport Transit Alert</strong>
+              <p id="student-portal-delay-text">Breakdown delay alert details will appear here.</p>
+            </div>
+          </div>
+
+          <div class="grid-2-col mb-6">
+            
+            <!-- Digital Student Transit Pass -->
+            <div class="content-card">
+              <div class="card-header bg-navy text-white">
+                <div>
+                  <h3 class="card-title text-white">Digital College Bus Transit Pass</h3>
+                  <p class="card-subtitle text-sky">Academic Year 2026 &ndash; 2027</p>
+                </div>
+                <span class="badge badge-success">VALID PASS</span>
+              </div>
+              <div class="card-body p-6">
+                <div class="student-pass-card">
+                  <div class="pass-photo-box">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+                  </div>
+                  <div class="pass-info-meta">
+                    <h4>Rahul Sharma</h4>
+                    <span>Student Registration: <strong>#101</strong></span>
+                    <span>Department: <strong>Computer Science &amp; Engineering</strong></span>
+                  </div>
+                </div>
+
+                <div class="transit-grid mt-4">
+                  <div>
+                    <label>Assigned Vehicle:</label>
+                    <strong class="text-blue">Bus 1 (TN-09-CB-101)</strong>
+                  </div>
+                  <div>
+                    <label>Pickup Stop &amp; Time:</label>
+                    <strong>Tambaram (07:15 AM)</strong>
+                  </div>
+                  <div>
+                    <label>Assigned Driver:</label>
+                    <strong>Murugan K (Ph: 98401 23456)</strong>
+                  </div>
+                  <div>
+                    <label>Transport Fee:</label>
+                    <strong class="text-emerald">₹12,000 Paid (Receipt #8491)</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tomorrow's Travel Declaration -->
+            <div class="content-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Tomorrow's Travel Intention</h3>
+                  <p class="card-subtitle">Notify transport office if you require a bus seat tomorrow morning</p>
+                </div>
+              </div>
+              <div class="card-body p-6">
+                <form action="#view-student-portal" id="form-student-intention">
+                  <div class="intention-toggle-box">
+                    <label class="radio-card">
+                      <input type="radio" name="tomorrowReq" value="yes" checked>
+                      <div class="radio-content">
+                        <div class="radio-dot"></div>
+                        <div>
+                          <strong>Yes, I require the bus tomorrow</strong>
+                          <small>Your seat will be reserved on Bus 1 at Tambaram (07:15 AM)</small>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label class="radio-card mt-3">
+                      <input type="radio" name="tomorrowReq" value="no">
+                      <div class="radio-content">
+                        <div class="radio-dot"></div>
+                        <div>
+                          <strong>No, I will self-commute / not attending</strong>
+                          <small>Frees up standby seat allocation for emergency buffer</small>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <button type="submit" id="btn-save-student-intention" class="btn btn-primary w-full mt-4">Save Tomorrow's Intention</button>
+                </form>
+
+                <div class="alert-banner alert-success mt-4" id="banner-student-intention">
+                  <div class="alert-content">
+                    <strong id="status-student-intention-text">Current Status: Required (Yes)</strong>
+                    <p id="desc-student-intention-text">Driver Murugan K has your name on the morning Tambaram boarding sheet.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Student Complaint Submission Box -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Submit Transport Grievance / Issue</h3>
+              <p class="card-subtitle">Direct line to Transport Officer regarding punctuality, cleanliness, or route concerns</p>
+            </div>
+            <div class="card-body p-6">
+              <form action="#view-student-portal">
+                <div class="grid-2-col mb-4">
+                  <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" required>
+                      <option value="delay">Bus Delay / Punctuality</option>
+                      <option value="overcrowd">Overcrowding / Seating</option>
+                      <option value="clean">Vehicle Cleanliness / Maintenance</option>
+                      <option value="route">Route &amp; Stop Request</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <input type="text" class="form-input" placeholder="Brief summary of issue" required>
+                  </div>
+                </div>
+                <div class="form-group mb-4">
+                  <label class="form-label">Detailed Description</label>
+                  <textarea class="form-input" rows="3" placeholder="Describe the stop, date, and specific details..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Ticket to Transport Desk</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 12: DRIVER 1 COCKPIT (MURUGAN K - BUS 1)
+             =================================================================== -->
+        <section class="view-panel" id="view-driver-1">
+          <div class="view-header">
+            <div>
+              <span class="badge badge-info font-bold">Driver 1 Cockpit</span>
+              <h1 class="view-title">Bus 1 Run Sheet &bull; Murugan K</h1>
+              <p class="view-subtitle">Route A (South Corridor: Tambaram &bull; Chromepet &bull; Guindy) &bull; Vehicle: TN-09-CB-101</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-breakdown-wizard" class="btn btn-danger btn-sm">Report Breakdown Incident</a>
+              <a href="#loginScreen" class="btn btn-outline btn-sm">Switch Driver</a>
+            </div>
+          </div>
+
+          <div class="metric-grid mb-6">
+            <div class="metric-card">
+              <span class="metric-label">Allocated Passengers</span>
+              <div class="metric-value text-blue" id="driver-1-allocated">2 / 20</div>
+              <span class="metric-trend text-blue" id="driver-1-vacant">18 Seats Vacant</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Boarded Passengers</span>
+              <div class="metric-value text-emerald" id="driver-1-boarded">0 / 2</div>
+              <span class="metric-trend text-emerald">At Chromepet &amp; Guindy</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Scheduled Departure</span>
+              <div class="metric-value text-indigo">07:15 AM</div>
+              <span class="metric-trend text-indigo">From Tambaram Stop</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Route Status</span>
+              <div class="metric-value text-emerald">On Schedule</div>
+              <span class="metric-trend text-emerald">0 min delay</span>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title" id="driver-1-manifest-title">Bus 1 Passenger Manifest</h3>
+              <p class="card-subtitle">Driver can tick physical boarding checkboxes upon arrival at designated pickup stops</p>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Seat #</th>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Pickup Stop</th>
+                    <th>Pass Auth</th>
+                    <th>Declared Tomorrow</th>
+                    <th>Safe Boarding</th>
+                  </tr>
+                </thead>
+                <tbody id="driver-1-manifest-body">
+                  <tr><td>01</td><td><strong>#101</strong></td><td>Rahul Sharma</td><td>Tambaram</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>02</td><td><strong>#102</strong></td><td>Priya Nair</td><td>Chromepet</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>03</td><td><strong>#103</strong></td><td>Karthik Raj</td><td>Guindy</td><td><span class="badge badge-danger">Unauthorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>04</td><td><strong>#104</strong></td><td>Sneha Reddy</td><td>Tambaram</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>05</td><td><strong>#105</strong></td><td>Arun Kumar</td><td>Chromepet</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
+                  <tr><td>06</td><td><strong>#106</strong></td><td>Divya Balan</td><td>Guindy</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>07</td><td><strong>#107</strong></td><td>Vignesh S</td><td>Tambaram</td><td><span class="badge badge-danger">Unauthorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>08</td><td><strong>#108</strong></td><td>Meera Krishnan</td><td>Chromepet</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>09</td><td><strong>#109</strong></td><td>Ananya Ramesh</td><td>Guindy</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
+                  <tr><td>10</td><td><strong>#110</strong></td><td>Harish V</td><td>Tambaram</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 13: DRIVER 2 COCKPIT (SENTHIL P - BUS 2)
+             =================================================================== -->
+        <section class="view-panel" id="view-driver-2">
+          <div class="view-header">
+            <div>
+              <span class="badge badge-indigo font-bold">Driver 2 Cockpit</span>
+              <h1 class="view-title">Bus 2 Run Sheet &bull; Senthil P</h1>
+              <p class="view-subtitle">Route B (West Corridor: Porur &bull; Koyambedu &bull; Anna Nagar) &bull; Vehicle: TN-09-CB-102</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-breakdown-wizard" class="btn btn-danger btn-sm">Report Breakdown Incident</a>
+              <a href="#loginScreen" class="btn btn-outline btn-sm">Switch Driver</a>
+            </div>
+          </div>
+
+          <div class="metric-grid mb-6">
+            <div class="metric-card">
+              <span class="metric-label">Allocated Passengers</span>
+              <div class="metric-value text-indigo" id="driver-2-allocated">3 / 20</div>
+              <span class="metric-trend text-indigo" id="driver-2-vacant">17 Seats Vacant</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Boarded Passengers</span>
+              <div class="metric-value text-emerald" id="driver-2-boarded">1 / 3</div>
+              <span class="metric-trend text-emerald">At Koyambedu &amp; Porur</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Scheduled Departure</span>
+              <div class="metric-value text-indigo">07:20 AM</div>
+              <span class="metric-trend text-indigo">From Porur Junction</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Route Status</span>
+              <div class="metric-value text-emerald">On Schedule</div>
+              <span class="metric-trend text-emerald">0 min delay</span>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title" id="driver-2-manifest-title">Bus 2 Passenger Manifest</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Seat #</th>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Pickup Stop</th>
+                    <th>Pass Auth</th>
+                    <th>Declared Tomorrow</th>
+                    <th>Safe Boarding</th>
+                  </tr>
+                </thead>
+                <tbody id="driver-2-manifest-body">
+                  <tr><td>01</td><td><strong>#111</strong></td><td>Pooja Sundaram</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>02</td><td><strong>#112</strong></td><td>Siddharth M</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>03</td><td><strong>#113</strong></td><td>Kavyashree P</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>04</td><td><strong>#114</strong></td><td>Deepa L</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>05</td><td><strong>#115</strong></td><td>Gautham B</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
+                  <tr><td>06</td><td><strong>#116</strong></td><td>Roshni J</td><td>Anna Nagar</td><td><span class="badge badge-danger">Unauthorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>07</td><td><strong>#117</strong></td><td>Sanjay R</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>08</td><td><strong>#118</strong></td><td>Preeti K</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>09</td><td><strong>#119</strong></td><td>Ashwin N</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>10</td><td><strong>#120</strong></td><td>Nithya S</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
+                  <tr><td>11</td><td><strong>#121</strong></td><td>Manoj C</td><td>Koyambedu</td><td><span class="badge badge-danger">Unauthorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>12</td><td><strong>#122</strong></td><td>Lavanya T</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>13</td><td><strong>#123</strong></td><td>Keerthana S</td><td>Porur</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>14</td><td><strong>#124</strong></td><td>Rajesh G</td><td>Koyambedu</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>15</td><td><strong>#125</strong></td><td>Swetha V</td><td>Anna Nagar</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ===================================================================
+             VIEW 14: DRIVER 3 COCKPIT (VELU M - BUS 3)
+             =================================================================== -->
+        <section class="view-panel" id="view-driver-3">
+          <div class="view-header">
+            <div>
+              <span class="badge badge-emerald font-bold">Driver 3 Cockpit</span>
+              <h1 class="view-title">Bus 3 Run Sheet &bull; Velu M</h1>
+              <p class="view-subtitle">Route C (East Coast Corridor: Adyar &bull; Thiruvanmiyur &bull; Velachery) &bull; Vehicle: TN-09-CB-103</p>
+            </div>
+            <div class="header-actions">
+              <a href="#modal-breakdown-wizard" class="btn btn-danger btn-sm">Report Breakdown Incident</a>
+              <a href="#loginScreen" class="btn btn-outline btn-sm">Switch Driver</a>
+            </div>
+          </div>
+
+          <div class="metric-grid mb-6">
+            <div class="metric-card">
+              <span class="metric-label">Allocated Passengers</span>
+              <div class="metric-value text-emerald" id="driver-3-allocated">3 / 20</div>
+              <span class="metric-trend text-emerald" id="driver-3-vacant">17 Seats Vacant</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Boarded Passengers</span>
+              <div class="metric-value text-emerald" id="driver-3-boarded">1 / 3</div>
+              <span class="metric-trend text-emerald">At Velachery</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Scheduled Departure</span>
+              <div class="metric-value text-indigo">07:25 AM</div>
+              <span class="metric-trend text-indigo">From Adyar Depot</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Route Status</span>
+              <div class="metric-value text-emerald">On Schedule</div>
+              <span class="metric-trend text-emerald">0 min delay</span>
+            </div>
+          </div>
+
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title" id="driver-3-manifest-title">Bus 3 Passenger Manifest</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Seat #</th>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Pickup Stop</th>
+                    <th>Pass Auth</th>
+                    <th>Declared Tomorrow</th>
+                    <th>Safe Boarding</th>
+                  </tr>
+                </thead>
+                <tbody id="driver-3-manifest-body">
+                  <tr><td>01</td><td><strong>#126</strong></td><td>Deepak R</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>02</td><td><strong>#127</strong></td><td>Shalini M</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
+                  <tr><td>03</td><td><strong>#128</strong></td><td>Akash V</td><td>Adyar</td><td><span class="badge badge-danger">Unauthorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>04</td><td><strong>#129</strong></td><td>Pavithra K</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>05</td><td><strong>#130</strong></td><td>Varun P</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>06</td><td><strong>#131</strong></td><td>Sandhya S</td><td>Adyar</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>07</td><td><strong>#132</strong></td><td>Vikram N</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
+                  <tr><td>08</td><td><strong>#133</strong></td><td>Archana R</td><td>Velachery</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>09</td><td><strong>#134</strong></td><td>Gokul D</td><td>Adyar</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr><td>10</td><td><strong>#135</strong></td><td>Tharun K</td><td>Thiruvanmiyur</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       3. PURE CSS MODALS (ACCESSIBLE VIA :target)
+       ========================================================================= -->
+  
+  <!-- MODAL: ADD STUDENT -->
+  <div class="modal-overlay" id="modal-add-student">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Enroll Student in Transit System</h3>
+          <p class="modal-subtitle">Admin assigns student to a regular bus and stop without exceeding seating capacity</p>
+        </div>
+        <a href="#view-students" class="modal-close-btn">&times;</a>
+      </div>
+      <form action="#view-students">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Student ID <span class="required">*</span></label>
+            <input type="number" class="form-input" placeholder="e.g. 141" min="100" value="141" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Student Full Name <span class="required">*</span></label>
+            <input type="text" class="form-input" placeholder="e.g. Ananya Ramesh" value="Divyesh Rao" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Pickup Stop <span class="required">*</span></label>
+            <select class="form-select" required>
+              <option value="Tambaram">Tambaram (Route A - Bus 1)</option>
+              <option value="Chromepet">Chromepet (Route A - Bus 1)</option>
+              <option value="Guindy">Guindy (Route A - Bus 1)</option>
+              <option value="Porur">Porur (Route B - Bus 2)</option>
+              <option value="Koyambedu">Koyambedu (Route B - Bus 2)</option>
+              <option value="Anna Nagar">Anna Nagar (Route B - Bus 2)</option>
+              <option value="Adyar">Adyar (Route C - Bus 3)</option>
+              <option value="Thiruvanmiyur">Thiruvanmiyur (Route C - Bus 3)</option>
+              <option value="Velachery">Velachery (Route C - Bus 3)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Assign to Regular Bus <span class="required">*</span></label>
+            <select class="form-select">
+              <option value="1">Bus 1 &bull; 10/15 Assigned (5 Seats Free)</option>
+              <option value="2">Bus 2 &bull; 15/20 Assigned (5 Seats Free)</option>
+              <option value="3">Bus 3 &bull; 10/15 Assigned (5 Seats Free)</option>
+              <option value="">Leave Unallocated</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Transport Authorization</label>
+            <div class="radio-toggle-group">
+              <label class="radio-card">
+                <input type="radio" name="stAuth" value="true" checked>
+                <div class="radio-content">
+                  <div class="radio-dot"></div>
+                  <div><strong>Authorized</strong><small>Pass Cleared</small></div>
+                </div>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="stAuth" value="false">
+                <div class="radio-content">
+                  <div class="radio-dot"></div>
+                  <div><strong>Not Authorized</strong><small>Pending Approval</small></div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#view-students" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary">Enroll Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL: EDIT BUS CAPACITY -->
+  <div class="modal-overlay" id="modal-edit-capacity">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Configure Regular Bus Seating Capacity</h3>
+          <p class="modal-subtitle">Admin sets max capacity (never less than currently allocated students)</p>
+        </div>
+        <a href="#view-buses" class="modal-close-btn">&times;</a>
+      </div>
+      <form id="form-edit-capacity" action="#view-buses">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Select Vehicle</label>
+            <select id="select-bus-capacity" class="form-select" name="busId">
+              <option value="1">Bus 1 &mdash; Currently 10 Students Assigned</option>
+              <option value="2">Bus 2 &mdash; Currently 15 Students Assigned</option>
+              <option value="3">Bus 3 &mdash; Currently 10 Students Assigned</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">New Seating Limit <span class="required">*</span></label>
+            <input type="number" id="input-bus-capacity" class="form-input" min="1" max="60" value="20" required>
+            <small class="text-muted">Enforces strict safety limit: Allocation can never exceed this number.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#view-buses" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-primary">Save New Capacity</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL: EMERGENCY RECOVERY WIZARD (MINI BUS DEPLOYMENT) -->
+  <div class="modal-overlay" id="modal-breakdown-wizard">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header bg-rose-soft">
+        <div>
+          <h3 class="modal-title text-rose">Emergency Breakdown Recovery Wizard</h3>
+          <p class="modal-subtitle">Deploying Standby Mini Bus for stranded passengers</p>
+        </div>
+        <a href="#view-breakdowns" class="modal-close-btn">&times;</a>
+      </div>
+      <form id="form-breakdown-wizard" action="#view-breakdowns">
+        <div class="modal-body">
+          <div class="alert-banner alert-warning mb-4">
+            <div class="alert-content">
+              <strong>Breakdown Protocol:</strong>
+              <p>Already-boarded passengers remain safe. Reassign waiting downstream students to the standby Mini Bus shuttle.</p>
+            </div>
+          </div>
+
+          <div id="wizard-error-msg" class="alert-banner alert-danger mb-4" style="display: none;">
+            <div class="alert-content">
+              <span id="wizard-error-text"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="wizard-select-bus">Vehicle Experiencing Issue</label>
+            <select class="form-select" id="wizard-select-bus" required>
+              <option value="1">Bus 1 (Murugan K &bull; Route A: Tambaram)</option>
+              <option value="2">Bus 2 (Senthil P &bull; Route B: Porur)</option>
+              <option value="3">Bus 3 (Velu M &bull; Route C: Adyar)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">Standby Replacement Shuttle</label>
+              <span class="badge badge-success" id="wizard-standby-availability">Standby Ready</span>
+            </div>
+            <input type="text" class="form-input" id="wizard-standby-shuttle" value="Mini Bus (TN-09-MB-201) &bull; Capacity: 10 Seats" readonly>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="wizard-delay-minutes">Broadcast Delay to Student Dashboards (Minutes)</label>
+            <input type="number" class="form-input" id="wizard-delay-minutes" value="20" min="5" max="120" required>
+            <small class="text-muted">Downstream waiting students immediately see this updated delay notification (5 - 120 mins).</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="#view-breakdowns" class="btn btn-outline">Cancel</a>
+          <button type="submit" class="btn btn-danger" id="btn-deploy-minibus">Deploy Mini Bus &amp; Broadcast Notice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
