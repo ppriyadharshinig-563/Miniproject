@@ -11,6 +11,8 @@
   <!-- Real Interactive Map Engine Assets (Physical Road Tiles & Street Names) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Client-Side Barcode Decoding Engine (ZXing - Code 128 / Linear ID Barcodes) -->
+  <script src="lib/zxing.min.js"></script>
 </head>
 <body>
 
@@ -129,36 +131,62 @@
           <span>Each regular bus has its own distinct driver account. Drivers view only their assigned bus, route stops, and riders.</span>
         </div>
 
+        <div id="driver-login-error" class="alert-banner alert-danger mb-4" style="display: none;">
+          <div class="alert-content">
+            <strong id="driver-login-error-title">Authentication Failed</strong>
+            <p id="driver-login-error-msg" style="margin: 0;">Invalid driver credentials.</p>
+          </div>
+        </div>
+
+        <form id="form-driver-login" class="mb-4">
+          <div class="form-group mb-3">
+            <label class="form-label" for="driverLoginBus">Assigned Bus &amp; Driver Account</label>
+            <select id="driverLoginBus" class="form-select" required>
+              <option value="1">Bus 1 &mdash; Murugan K (TN-33-CB-101 &bull; Route A: Erode)</option>
+              <option value="2">Bus 2 &mdash; Senthil P (TN-33-CB-102 &bull; Route B: Bhavani)</option>
+              <option value="3">Bus 3 &mdash; Velu M (TN-33-CB-103 &bull; Route C: Chennimalai)</option>
+            </select>
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="driverLoginPassword">Driver Password / Security PIN</label>
+            <input type="password" id="driverLoginPassword" class="form-input" placeholder="Enter driver password (default: driver123)" value="driver123" required>
+            <small class="text-muted">Institutional driver credentials verified against MySQL database records.</small>
+          </div>
+
+          <button type="submit" id="btn-driver-signin" class="btn btn-primary w-full">Sign In to Assigned Driver Dashboard &rarr;</button>
+        </form>
+
         <div class="quick-login-box">
-          <span class="quick-label">Select Driver Account (3 Separate Regular Buses):</span>
+          <span class="quick-label">Or Quick-Select Driver Account:</span>
           <div class="driver-account-selector">
             
-            <a href="#view-driver-1" class="driver-card-btn">
+            <button type="button" class="driver-card-btn btn-driver-quick" data-bus-id="1">
               <div class="driver-card-icon">1</div>
               <div class="driver-card-info">
-                <strong>Bus 1 &mdash; Driver 1 Account</strong>
-                <span>Murugan K &bull; TN-33-CB-101 (Route A: Erode)</span>
-                <small>Allocated: Real DB Students &bull; Erode, Thindal, Perundurai</small>
+                <strong>Bus 1 &mdash; Murugan K</strong>
+                <span>TN-33-CB-101 (Route A: Erode)</span>
+                <small>Stops: Erode, Thindal, Perundurai</small>
               </div>
-            </a>
+            </button>
 
-            <a href="#view-driver-2" class="driver-card-btn">
+            <button type="button" class="driver-card-btn btn-driver-quick" data-bus-id="2">
               <div class="driver-card-icon">2</div>
               <div class="driver-card-info">
-                <strong>Bus 2 &mdash; Driver 2 Account</strong>
-                <span>Senthil P &bull; TN-33-CB-102 (Route B: Bhavani)</span>
-                <small>Allocated: Real DB Students &bull; Bhavani, Lakshmi Nagar, Perundurai RS</small>
+                <strong>Bus 2 &mdash; Senthil P</strong>
+                <span>TN-33-CB-102 (Route B: Bhavani)</span>
+                <small>Stops: Bhavani, Lakshmi Nagar, Perundurai RS</small>
               </div>
-            </a>
+            </button>
 
-            <a href="#view-driver-3" class="driver-card-btn">
+            <button type="button" class="driver-card-btn btn-driver-quick" data-bus-id="3">
               <div class="driver-card-icon">3</div>
               <div class="driver-card-info">
-                <strong>Bus 3 &mdash; Driver 3 Account</strong>
-                <span>Velu M &bull; TN-33-CB-103 (Route C: Chennimalai)</span>
-                <small>Allocated: Real DB Students &bull; Chennimalai, Vijayamangalam, KEC Gate</small>
+                <strong>Bus 3 &mdash; Velu M</strong>
+                <span>TN-33-CB-103 (Route C: Chennimalai)</span>
+                <small>Stops: Chennimalai, Vijayamangalam, KEC Gate</small>
               </div>
-            </a>
+            </button>
 
           </div>
         </div>
@@ -249,11 +277,6 @@
           <a href="#view-fees" class="nav-item">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
             Fee Ledger (₹12,000)
-          </a>
-
-          <a href="#view-eligibility" class="nav-item">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Java Eligibility Manifest
           </a>
 
           <a href="#view-complaints" class="nav-item">
@@ -424,8 +447,8 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Total Registered Students</span>
-                  <div class="metric-value" id="stat-total-students">9</div>
-                  <span class="metric-trend text-blue" id="stat-total-students-trend">9 Students in Database</span>
+                  <div class="metric-value" id="stat-total-students">--</div>
+                  <span class="metric-trend text-blue" id="stat-total-students-trend">Connecting to MySQL...</span>
                 </div>
                 <div class="metric-icon-box bg-blue-soft text-blue">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -437,8 +460,8 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Regular Fleet Buses</span>
-                  <div class="metric-value" id="stat-regular-buses">3</div>
-                  <span class="metric-trend text-indigo" id="stat-regular-buses-trend">60 Total Regular Seats</span>
+                  <div class="metric-value" id="stat-regular-buses">--</div>
+                  <span class="metric-trend text-indigo" id="stat-regular-buses-trend">Loading fleet...</span>
                 </div>
                 <div class="metric-icon-box bg-indigo-soft text-indigo">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>
@@ -450,24 +473,11 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Riders Expected Tomorrow</span>
-                  <div class="metric-value" id="stat-tomorrow-demand">0</div>
-                  <span class="metric-trend text-amber" id="stat-tomorrow-demand-trend">Travel intentions declared</span>
+                  <div class="metric-value" id="stat-tomorrow-demand">--</div>
+                  <span class="metric-trend text-amber" id="stat-tomorrow-demand-trend">Loading demand...</span>
                 </div>
                 <div class="metric-icon-box bg-amber-soft text-amber">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                </div>
-              </div>
-            </div>
-
-            <div class="metric-card border-accent-highlight">
-              <div class="metric-card-inner">
-                <div>
-                  <span class="metric-label">Java Eligible to Board</span>
-                  <div class="metric-value text-emerald" id="stat-eligible-board">0</div>
-                  <span class="metric-trend text-emerald" id="stat-eligible-board-trend">Auth + Present + Req</span>
-                </div>
-                <div class="metric-icon-box bg-emerald-soft text-emerald">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
                 </div>
               </div>
             </div>
@@ -476,8 +486,8 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Operating Normally</span>
-                  <div class="metric-value text-emerald" id="stat-operating-normally">3</div>
-                  <span class="metric-trend text-emerald" id="stat-operating-normally-trend">3 Buses on schedule</span>
+                  <div class="metric-value text-emerald" id="stat-operating-normally">--</div>
+                  <span class="metric-trend text-emerald" id="stat-operating-normally-trend">Checking schedule...</span>
                 </div>
                 <div class="metric-icon-box bg-emerald-soft text-emerald">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -489,8 +499,8 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Buses with Breakdowns</span>
-                  <div class="metric-value text-rose" id="stat-breakdown-buses">0</div>
-                  <span class="metric-trend text-rose" id="stat-breakdown-buses-trend">0 fleet incidents</span>
+                  <div class="metric-value text-rose" id="stat-breakdown-buses">--</div>
+                  <span class="metric-trend text-rose" id="stat-breakdown-buses-trend">Loading incidents...</span>
                 </div>
                 <div class="metric-icon-box bg-rose-soft text-rose">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
@@ -502,8 +512,8 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Unallocated Students</span>
-                  <div class="metric-value text-amber" id="stat-unallocated-students">1</div>
-                  <span class="metric-trend text-amber" id="stat-unallocated-students-trend">Awaiting bus assignment</span>
+                  <div class="metric-value text-amber" id="stat-unallocated-students">--</div>
+                  <span class="metric-trend text-amber" id="stat-unallocated-students-trend">Calculating waitlist...</span>
                 </div>
                 <div class="metric-icon-box bg-amber-soft text-amber">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -515,8 +525,8 @@
               <div class="metric-card-inner">
                 <div>
                   <span class="metric-label">Active Grievance Tickets</span>
-                  <div class="metric-value text-rose" id="stat-grievance-tickets">0</div>
-                  <span class="metric-trend text-rose" id="stat-grievance-trend">0 Open &bull; 0 Resolved</span>
+                  <div class="metric-value text-rose" id="stat-grievance-tickets">--</div>
+                  <span class="metric-trend text-rose" id="stat-grievance-trend">Loading grievances...</span>
                 </div>
                 <div class="metric-icon-box bg-rose-soft text-rose">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -886,7 +896,6 @@
                     <th>Pickup Stop</th>
                     <th>Campus Attendance</th>
                     <th>Safe Boarding Status</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="attendance-table-body">
@@ -962,6 +971,10 @@
                 <input type="date" id="requirementsDatePicker" class="form-input" style="padding:4px 10px;font-size:13px;width:auto;">
               </div>
             </div>
+            <div class="card-body p-4" id="requirements-stop-summary-container" style="display: none; border-bottom: 1px solid var(--slate-200);">
+              <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--slate-700);">Tomorrow's Transit Demand Grouped by Pickup Stop</h4>
+              <div id="requirements-stop-summary" class="grid-3-col" style="gap: 12px;"></div>
+            </div>
             <div class="table-responsive">
               <table class="data-table">
                 <thead>
@@ -971,7 +984,6 @@
                     <th>Assigned Bus</th>
                     <th>Pickup Stop</th>
                     <th>Bus Required Tomorrow?</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="requirements-table-body">
@@ -1245,26 +1257,26 @@
         <section class="view-panel" id="view-fees">
           <div class="view-header">
             <div>
-              <h1 class="view-title">Transport Fee Ledger (₹12,000 / Year)</h1>
-              <p class="view-subtitle">Official bursar records: Track transport fee payments required for college bus authorization.</p>
+              <h1 class="view-title">Transport Fee Ledger (Distance-Based: ₹2.00 / km)</h1>
+              <p class="view-subtitle">Official bursar records: Track distance-based transport fees (Distance in km × ₹2/km) for college bus authorization.</p>
             </div>
           </div>
 
           <div class="metric-grid mb-6">
             <div class="metric-card">
-              <span class="metric-label">Prescribed Annual Fee</span>
-              <div class="metric-value text-blue">₹12,000</div>
-              <span class="metric-trend text-blue">Per student / academic year</span>
+              <span class="metric-label">Fare Formula</span>
+              <div class="metric-value text-blue">₹2.00 / km</div>
+              <span class="metric-trend text-blue">Distance × ₹2.00 per km rate</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Paid Records</span>
-              <div class="metric-value text-emerald" id="fee-metric-paid-count">33 / 40</div>
-              <span class="metric-trend text-emerald" id="fee-metric-paid-total">₹3,96,000 Collected</span>
+              <div class="metric-value text-emerald" id="fee-metric-paid-count">0 / 0</div>
+              <span class="metric-trend text-emerald" id="fee-metric-paid-total">₹0 Collected</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Outstanding Balances</span>
-              <div class="metric-value text-amber" id="fee-metric-pending-count">7 / 40</div>
-              <span class="metric-trend text-amber" id="fee-metric-pending-total">₹84,000 Pending</span>
+              <div class="metric-value text-amber" id="fee-metric-pending-count">0 / 0</div>
+              <span class="metric-trend text-amber" id="fee-metric-pending-total">₹0 Pending</span>
             </div>
           </div>
 
@@ -1279,7 +1291,10 @@
                     <th>Student ID</th>
                     <th>Name</th>
                     <th>Assigned Bus</th>
-                    <th>Fee Amount</th>
+                    <th>Pickup Stop</th>
+                    <th>Distance (km)</th>
+                    <th>Rate</th>
+                    <th>Calculated Fee</th>
                     <th>Payment Status</th>
                     <th>Receipt Date</th>
                     <th>Pass Clearance</th>
@@ -1338,101 +1353,7 @@
 
 
         <!-- ===================================================================
-             VIEW 9: JAVA ELIGIBILITY MANIFEST
-             =================================================================== -->
-        <section class="view-panel" id="view-eligibility">
-          <div class="view-header">
-            <div>
-              <h1 class="view-title">Java Eligibility Manifest &amp; Rule Engine</h1>
-              <p class="view-subtitle">Demonstrates the core Java application rule: <code>isEligible = transportAuthorized &amp;&amp; present &amp;&amp; busRequired</code></p>
-            </div>
-          </div>
-
-          <div class="content-card mb-6">
-            <div class="card-header bg-emerald-soft">
-              <div>
-                <h3 class="card-title text-navy">Java Application Business Logic</h3>
-                <p class="card-subtitle">Exact matching with <code>Student.java</code> and <code>Main.java</code></p>
-              </div>
-            </div>
-            <div class="card-body p-6">
-              <div class="java-rule-box">
-                <code>
-                  boolean isEligibleToBoard = student.isTransportAuthorized() &amp;&amp; student.isPresent() &amp;&amp; student.isBusRequired();
-                </code>
-              </div>
-              <p class="mt-4">A student is qualified to board today's bus <strong>only if all three conditions evaluate to TRUE</strong>:</p>
-              <ul class="rule-bullets mt-2">
-                <li><strong>1. Transport Authorized:</strong> Approved annual pass and fee clearance recorded.</li>
-                <li><strong>2. Campus Attendance:</strong> Marked physically present for today's session.</li>
-                <li><strong>3. Travel Intention:</strong> Declared requirement for college bus commute tomorrow.</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="content-card">
-            <div class="card-header">
-              <h3 class="card-title">Eligibility Evaluation Roster (22 Qualified Students)</h3>
-            </div>
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                    <th>Pass Authorized</th>
-                    <th>Attendance</th>
-                    <th>Bus Required</th>
-                    <th>Java Evaluation Result</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr><td>#101</td><td>Rahul Sharma</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#102</td><td>Priya Nair</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
-                  <tr><td>#103</td><td>Karthik Raj</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
-                  <tr><td>#104</td><td>Sneha Reddy</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
-                  <tr><td>#105</td><td>Arun Kumar</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#106</td><td>Divya Balan</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
-                  <tr><td>#107</td><td>Vignesh S</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">&cross; Ineligible (All False)</span></td></tr>
-                  <tr><td>#108</td><td>Meera Krishnan</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#109</td><td>Ananya Ramesh</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#110</td><td>Harish V</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  
-                  <tr><td>#111</td><td>Pooja Sundaram</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#112</td><td>Siddharth M</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#113</td><td>Kavyashree P</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#114</td><td>Deepa L</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#115</td><td>Gautham B</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#116</td><td>Roshni J</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
-                  <tr><td>#117</td><td>Sanjay R</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
-                  <tr><td>#118</td><td>Preeti K</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#119</td><td>Ashwin N</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#120</td><td>Nithya S</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#121</td><td>Manoj C</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
-                  <tr><td>#122</td><td>Lavanya T</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#123</td><td>Keerthana S</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#124</td><td>Rajesh G</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
-                  <tr><td>#125</td><td>Swetha V</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-
-                  <tr><td>#126</td><td>Deepak R</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
-                  <tr><td>#127</td><td>Shalini M</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#128</td><td>Akash V</td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Unauthorized)</span></td></tr>
-                  <tr><td>#129</td><td>Pavithra K</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#130</td><td>Varun P</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">&cross; Ineligible (Absent)</span></td></tr>
-                  <tr><td>#131</td><td>Sandhya S</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#132</td><td>Vikram N</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-danger">FALSE</span></td><td><span class="badge badge-neutral">&cross; Ineligible (No bus needed)</span></td></tr>
-                  <tr><td>#133</td><td>Archana R</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#134</td><td>Gokul D</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                  <tr><td>#135</td><td>Tharun K</td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success">TRUE</span></td><td><span class="badge badge-success font-bold">&check; ELIGIBLE TO BOARD</span></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-
-        <!-- ===================================================================
-             VIEW 10: STUDENT GRIEVANCE DESK
+             VIEW 9: STUDENT GRIEVANCE DESK
              =================================================================== -->
         <section class="view-panel" id="view-complaints">
           <div class="view-header">
@@ -1631,6 +1552,22 @@
                         </div>
                       </div>
                     </label>
+                  </div>
+
+                  <div class="form-group mt-3" id="student-intention-stop-group">
+                    <label for="student-intention-pickup-stop" class="form-label text-sm font-semibold">Select Pickup Stop <span class="text-rose-500">*</span></label>
+                    <select id="student-intention-pickup-stop" class="form-select w-full" required>
+                      <option value="">-- Choose your pickup stop --</option>
+                      <option value="Erode Central">Erode Central (22.5 km)</option>
+                      <option value="Thindal">Thindal (16.2 km)</option>
+                      <option value="Perundurai">Perundurai (3.8 km)</option>
+                      <option value="Bhavani">Bhavani (26.0 km)</option>
+                      <option value="Lakshmi Nagar Bypass">Lakshmi Nagar Bypass (18.5 km)</option>
+                      <option value="Perundurai RS">Perundurai RS (4.5 km)</option>
+                      <option value="Chennimalai">Chennimalai (14.0 km)</option>
+                      <option value="Vijayamangalam">Vijayamangalam (12.4 km)</option>
+                      <option value="KEC Campus Gate">KEC Campus Gate (0.5 km)</option>
+                    </select>
                   </div>
 
                   <button type="submit" id="btn-save-student-intention" class="btn btn-primary w-full mt-4">Save Tomorrow's Intention</button>
@@ -2108,13 +2045,13 @@
           <div class="metric-grid mb-6">
             <div class="metric-card">
               <span class="metric-label">Allocated Passengers</span>
-              <div class="metric-value text-blue" id="driver-1-allocated">2 / 20</div>
-              <span class="metric-trend text-blue" id="driver-1-vacant">18 Seats Vacant</span>
+              <div class="metric-value text-blue" id="driver-1-allocated">&mdash;</div>
+              <span class="metric-trend text-blue" id="driver-1-vacant">&mdash;</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Boarded Passengers</span>
-              <div class="metric-value text-emerald" id="driver-1-boarded">0 / 2</div>
-              <span class="metric-trend text-emerald">At Thindal &amp; Perundurai</span>
+              <div class="metric-value text-emerald" id="driver-1-boarded">&mdash;</div>
+              <span class="metric-trend text-emerald">At Designated Stops</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Scheduled Departure</span>
@@ -2125,6 +2062,117 @@
               <span class="metric-label">Route Status</span>
               <div class="metric-value text-emerald">On Schedule</div>
               <span class="metric-trend text-emerald">0 min delay</span>
+            </div>
+          </div>
+
+          <!-- DRIVER 1 WEBCAM BARCODE ATTENDANCE SCANNER -->
+          <div class="content-card mb-6 barcode-scanner-panel" id="driver-1-scanner-panel">
+            <div class="card-header flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <span class="badge badge-info text-xs font-bold mb-1">📷 Driver Scanner Prototype</span>
+                <h3 class="card-title">Student College ID Barcode Scanner</h3>
+                <p class="card-subtitle">Scan student ID card barcode via laptop webcam &bull; Verifies student pass, bus match &amp; prevents duplicate boarding</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-neutral" id="driver-1-scanner-status-badge">Camera Inactive</span>
+              </div>
+            </div>
+
+            <div class="card-body p-6">
+              <!-- Controls Toolbar -->
+              <div class="scanner-toolbar mb-4">
+                <button type="button" class="btn btn-primary btn-sm flex items-center gap-2" id="driver-1-btn-start-camera" onclick="startDriverScanner(1)">
+                  <span>🎥</span> Start Camera
+                </button>
+                <button type="button" class="btn btn-outline btn-sm flex items-center gap-2" id="driver-1-btn-stop-camera" onclick="stopDriverScanner(1)" disabled>
+                  <span>⏹️</span> Stop Camera
+                </button>
+                <div class="flex items-center gap-2">
+                  <label for="driver-1-camera-select" class="text-xs font-semibold text-muted">Camera:</label>
+                  <select class="form-select text-sm py-1" id="driver-1-camera-select" onchange="changeDriverScannerDevice(1)">
+                    <option value="">Default Laptop Camera</option>
+                  </select>
+                </div>
+                <div class="ml-auto flex items-center gap-2 flex-wrap">
+                  <button type="button" class="btn btn-outline btn-sm flex items-center gap-1" onclick="testScanSampleCard(1)" title="Scan College ID Card (25CSR223)">
+                    <span>🪪</span> Scan Sample ID (25CSR223)
+                  </button>
+                  <label class="btn btn-outline btn-sm flex items-center gap-1 cursor-pointer" title="Upload ID card image file to test barcode decode">
+                    <span>📁</span> Upload Card Image
+                    <input type="file" accept="image/*" style="display: none;" onchange="handleBarcodeImageUpload(event, 1)">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Fast Scanning Pro-Tip Banner -->
+              <div class="mb-3 p-2.5 px-3 rounded bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+                <span>⚡ <strong>Instant Scan Tip:</strong> Hold card steady <strong>~15–20 cm (6–8 in)</strong> from camera with good lighting. Keep barcode level inside the red alignment beam.</span>
+              </div>
+
+              <!-- Viewport & Result Columns -->
+              <div class="grid-2-col gap-6 items-start">
+                <!-- Left: Live Video Viewport -->
+                <div class="scanner-viewport-container">
+                  <div class="scanner-viewport" id="driver-1-scanner-viewport">
+                    <video id="driver-1-scanner-video" class="scanner-video" autoplay muted playsinline></video>
+                    <!-- Targeting reticle & laser animation overlay -->
+                    <div class="scanner-overlay" id="driver-1-scanner-overlay" style="display: none;">
+                      <div class="scanner-reticle">
+                        <div class="scanner-laser"></div>
+                        <div class="reticle-corner top-left"></div>
+                        <div class="reticle-corner top-right"></div>
+                        <div class="reticle-corner bottom-left"></div>
+                        <div class="reticle-corner bottom-right"></div>
+                      </div>
+                      <div class="scanner-guidance-pill">Align 1D Barcode Inside Frame</div>
+                    </div>
+                    <!-- Placeholder when camera is off -->
+                    <div class="scanner-placeholder" id="driver-1-scanner-placeholder">
+                      <div class="placeholder-icon">📷</div>
+                      <p class="font-bold text-navy mb-1">Webcam Scanner Offline</p>
+                      <p class="text-xs text-muted">Click <strong>Start Camera</strong> to activate your laptop webcam, or test with the sample student card.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Real-Time Scan Result & Verification Feed -->
+                <div class="scanner-feedback-container">
+                  <div class="result-card p-4 rounded-lg border bg-slate-50" id="driver-1-scan-result-card">
+                    <div class="flex items-center justify-between mb-3">
+                      <span class="text-xs font-bold uppercase tracking-wider text-muted">Boarding Verification Feed</span>
+                      <span class="badge badge-neutral" id="driver-1-scan-badge">Ready To Scan</span>
+                    </div>
+
+                    <!-- Decoded Value Box -->
+                    <div class="decoded-box p-3 bg-white border rounded mb-3">
+                      <div class="text-xs text-muted mb-1">Decoded Barcode:</div>
+                      <div class="font-mono font-bold text-lg text-navy tracking-widest" id="driver-1-decoded-val">&mdash;</div>
+                      <div class="text-xs text-muted mt-1" id="driver-1-barcode-format">Format: Code 128 / Linear 1D</div>
+                    </div>
+
+                    <!-- Student Profile Preview -->
+                    <div class="student-info-box p-3 bg-white border rounded mb-3" id="driver-1-student-info" style="display: none;">
+                      <div class="flex items-start gap-3">
+                        <div class="student-avatar" id="driver-1-student-avatar">🎓</div>
+                        <div class="flex-1">
+                          <h4 class="font-bold text-navy text-sm mb-1" id="driver-1-student-name">Student Name</h4>
+                          <div class="text-xs text-muted" id="driver-1-student-roll">Roll No: &mdash;</div>
+                          <div class="text-xs text-muted" id="driver-1-student-dept">Dept: &mdash;</div>
+                          <div class="text-xs text-muted" id="driver-1-student-stop">Pickup Stop: &mdash;</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Live Status Alert -->
+                    <div id="driver-1-scanner-alert" class="alert-banner alert-info text-sm" style="display: none;">
+                      <div class="alert-content">
+                        <strong id="driver-1-scanner-alert-title">Status</strong>
+                        <p id="driver-1-scanner-alert-msg" class="text-xs mt-1">Ready</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2147,16 +2195,7 @@
                   </tr>
                 </thead>
                 <tbody id="driver-1-manifest-body">
-                  <tr><td>01</td><td><strong>#101</strong></td><td>Rahul Sharma</td><td>Erode Central</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>02</td><td><strong>#102</strong></td><td>Priya Nair</td><td>Thindal</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>03</td><td><strong>#103</strong></td><td>Karthik Raj</td><td>Perundurai</td><td><span class="badge badge-danger">Unauthorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>04</td><td><strong>#104</strong></td><td>Sneha Reddy</td><td>Erode Central</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>05</td><td><strong>#105</strong></td><td>Arun Kumar</td><td>Thindal</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
-                  <tr><td>06</td><td><strong>#106</strong></td><td>Divya Balan</td><td>Perundurai</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>07</td><td><strong>#107</strong></td><td>Vignesh S</td><td>Erode Central</td><td><span class="badge badge-danger">Unauthorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>08</td><td><strong>#108</strong></td><td>Meera Krishnan</td><td>Thindal</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>09</td><td><strong>#109</strong></td><td>Ananya Ramesh</td><td>Perundurai</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
-                  <tr><td>10</td><td><strong>#110</strong></td><td>Harish V</td><td>Erode Central</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr id="driver-1-manifest-loading"><td colspan="7" class="text-center p-4 text-muted">Loading live passenger manifest from database...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2319,13 +2358,13 @@
           <div class="metric-grid mb-6">
             <div class="metric-card">
               <span class="metric-label">Allocated Passengers</span>
-              <div class="metric-value text-indigo" id="driver-2-allocated">3 / 20</div>
-              <span class="metric-trend text-indigo" id="driver-2-vacant">17 Seats Vacant</span>
+              <div class="metric-value text-indigo" id="driver-2-allocated">&mdash;</div>
+              <span class="metric-trend text-indigo" id="driver-2-vacant">&mdash;</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Boarded Passengers</span>
-              <div class="metric-value text-emerald" id="driver-2-boarded">1 / 3</div>
-              <span class="metric-trend text-emerald">At Lakshmi Nagar &amp; Bhavani</span>
+              <div class="metric-value text-emerald" id="driver-2-boarded">&mdash;</div>
+              <span class="metric-trend text-emerald">At Designated Stops</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Scheduled Departure</span>
@@ -2336,6 +2375,117 @@
               <span class="metric-label">Route Status</span>
               <div class="metric-value text-emerald">On Schedule</div>
               <span class="metric-trend text-emerald">0 min delay</span>
+            </div>
+          </div>
+
+          <!-- DRIVER 2 WEBCAM BARCODE ATTENDANCE SCANNER -->
+          <div class="content-card mb-6 barcode-scanner-panel" id="driver-2-scanner-panel">
+            <div class="card-header flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <span class="badge badge-indigo text-xs font-bold mb-1">📷 Driver Scanner Prototype</span>
+                <h3 class="card-title">Student College ID Barcode Scanner</h3>
+                <p class="card-subtitle">Scan student ID card barcode via laptop webcam &bull; Verifies student pass, bus match &amp; prevents duplicate boarding</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-neutral" id="driver-2-scanner-status-badge">Camera Inactive</span>
+              </div>
+            </div>
+
+            <div class="card-body p-6">
+              <!-- Controls Toolbar -->
+              <div class="scanner-toolbar mb-4">
+                <button type="button" class="btn btn-primary btn-sm flex items-center gap-2" id="driver-2-btn-start-camera" onclick="startDriverScanner(2)">
+                  <span>🎥</span> Start Camera
+                </button>
+                <button type="button" class="btn btn-outline btn-sm flex items-center gap-2" id="driver-2-btn-stop-camera" onclick="stopDriverScanner(2)" disabled>
+                  <span>⏹️</span> Stop Camera
+                </button>
+                <div class="flex items-center gap-2">
+                  <label for="driver-2-camera-select" class="text-xs font-semibold text-muted">Camera:</label>
+                  <select class="form-select text-sm py-1" id="driver-2-camera-select" onchange="changeDriverScannerDevice(2)">
+                    <option value="">Default Laptop Camera</option>
+                  </select>
+                </div>
+                <div class="ml-auto flex items-center gap-2 flex-wrap">
+                  <button type="button" class="btn btn-outline btn-sm flex items-center gap-1" onclick="testScanSampleCard(2)" title="Scan College ID Card (25CSR223)">
+                    <span>🪪</span> Scan Sample ID (25CSR223)
+                  </button>
+                  <label class="btn btn-outline btn-sm flex items-center gap-1 cursor-pointer" title="Upload ID card image file to test barcode decode">
+                    <span>📁</span> Upload Card Image
+                    <input type="file" accept="image/*" style="display: none;" onchange="handleBarcodeImageUpload(event, 2)">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Fast Scanning Pro-Tip Banner -->
+              <div class="mb-3 p-2.5 px-3 rounded bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+                <span>⚡ <strong>Instant Scan Tip:</strong> Hold card steady <strong>~15–20 cm (6–8 in)</strong> from camera with good lighting. Keep barcode level inside the red alignment beam.</span>
+              </div>
+
+              <!-- Viewport & Result Columns -->
+              <div class="grid-2-col gap-6 items-start">
+                <!-- Left: Live Video Viewport -->
+                <div class="scanner-viewport-container">
+                  <div class="scanner-viewport" id="driver-2-scanner-viewport">
+                    <video id="driver-2-scanner-video" class="scanner-video" autoplay muted playsinline></video>
+                    <!-- Targeting reticle & laser animation overlay -->
+                    <div class="scanner-overlay" id="driver-2-scanner-overlay" style="display: none;">
+                      <div class="scanner-reticle">
+                        <div class="scanner-laser"></div>
+                        <div class="reticle-corner top-left"></div>
+                        <div class="reticle-corner top-right"></div>
+                        <div class="reticle-corner bottom-left"></div>
+                        <div class="reticle-corner bottom-right"></div>
+                      </div>
+                      <div class="scanner-guidance-pill">Align 1D Barcode Inside Frame</div>
+                    </div>
+                    <!-- Placeholder when camera is off -->
+                    <div class="scanner-placeholder" id="driver-2-scanner-placeholder">
+                      <div class="placeholder-icon">📷</div>
+                      <p class="font-bold text-navy mb-1">Webcam Scanner Offline</p>
+                      <p class="text-xs text-muted">Click <strong>Start Camera</strong> to activate your laptop webcam, or test with the sample student card.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Real-Time Scan Result & Verification Feed -->
+                <div class="scanner-feedback-container">
+                  <div class="result-card p-4 rounded-lg border bg-slate-50" id="driver-2-scan-result-card">
+                    <div class="flex items-center justify-between mb-3">
+                      <span class="text-xs font-bold uppercase tracking-wider text-muted">Boarding Verification Feed</span>
+                      <span class="badge badge-neutral" id="driver-2-scan-badge">Ready To Scan</span>
+                    </div>
+
+                    <!-- Decoded Value Box -->
+                    <div class="decoded-box p-3 bg-white border rounded mb-3">
+                      <div class="text-xs text-muted mb-1">Decoded Barcode:</div>
+                      <div class="font-mono font-bold text-lg text-navy tracking-widest" id="driver-2-decoded-val">&mdash;</div>
+                      <div class="text-xs text-muted mt-1" id="driver-2-barcode-format">Format: Code 128 / Linear 1D</div>
+                    </div>
+
+                    <!-- Student Profile Preview -->
+                    <div class="student-info-box p-3 bg-white border rounded mb-3" id="driver-2-student-info" style="display: none;">
+                      <div class="flex items-start gap-3">
+                        <div class="student-avatar" id="driver-2-student-avatar">🎓</div>
+                        <div class="flex-1">
+                          <h4 class="font-bold text-navy text-sm mb-1" id="driver-2-student-name">Student Name</h4>
+                          <div class="text-xs text-muted" id="driver-2-student-roll">Roll No: &mdash;</div>
+                          <div class="text-xs text-muted" id="driver-2-student-dept">Dept: &mdash;</div>
+                          <div class="text-xs text-muted" id="driver-2-student-stop">Pickup Stop: &mdash;</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Live Status Alert -->
+                    <div id="driver-2-scanner-alert" class="alert-banner alert-info text-sm" style="display: none;">
+                      <div class="alert-content">
+                        <strong id="driver-2-scanner-alert-title">Status</strong>
+                        <p id="driver-2-scanner-alert-msg" class="text-xs mt-1">Ready</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2357,21 +2507,7 @@
                   </tr>
                 </thead>
                 <tbody id="driver-2-manifest-body">
-                  <tr><td>01</td><td><strong>#111</strong></td><td>Pooja Sundaram</td><td>Bhavani</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>02</td><td><strong>#112</strong></td><td>Siddharth M</td><td>Lakshmi Nagar Bypass</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>03</td><td><strong>#113</strong></td><td>Kavyashree P</td><td>Perundurai RS</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>04</td><td><strong>#114</strong></td><td>Deepa L</td><td>Bhavani</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>05</td><td><strong>#115</strong></td><td>Gautham B</td><td>Lakshmi Nagar Bypass</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
-                  <tr><td>06</td><td><strong>#116</strong></td><td>Roshni J</td><td>Perundurai RS</td><td><span class="badge badge-danger">Unauthorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>07</td><td><strong>#117</strong></td><td>Sanjay R</td><td>Bhavani</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>08</td><td><strong>#118</strong></td><td>Preeti K</td><td>Lakshmi Nagar Bypass</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>09</td><td><strong>#119</strong></td><td>Ashwin N</td><td>Perundurai RS</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>10</td><td><strong>#120</strong></td><td>Nithya S</td><td>Bhavani</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
-                  <tr><td>11</td><td><strong>#121</strong></td><td>Manoj C</td><td>Lakshmi Nagar Bypass</td><td><span class="badge badge-danger">Unauthorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>12</td><td><strong>#122</strong></td><td>Lavanya T</td><td>Perundurai RS</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>13</td><td><strong>#123</strong></td><td>Keerthana S</td><td>Bhavani</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>14</td><td><strong>#124</strong></td><td>Rajesh G</td><td>Lakshmi Nagar Bypass</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>15</td><td><strong>#125</strong></td><td>Swetha V</td><td>Perundurai RS</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr id="driver-2-manifest-loading"><td colspan="7" class="text-center p-4 text-muted">Loading live passenger manifest from database...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2534,13 +2670,13 @@
           <div class="metric-grid mb-6">
             <div class="metric-card">
               <span class="metric-label">Allocated Passengers</span>
-              <div class="metric-value text-emerald" id="driver-3-allocated">3 / 20</div>
-              <span class="metric-trend text-emerald" id="driver-3-vacant">17 Seats Vacant</span>
+              <div class="metric-value text-emerald" id="driver-3-allocated">&mdash;</div>
+              <span class="metric-trend text-emerald" id="driver-3-vacant">&mdash;</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Boarded Passengers</span>
-              <div class="metric-value text-emerald" id="driver-3-boarded">1 / 3</div>
-              <span class="metric-trend text-emerald">At Vijayamangalam &amp; KEC Gate</span>
+              <div class="metric-value text-emerald" id="driver-3-boarded">&mdash;</div>
+              <span class="metric-trend text-emerald">At Designated Stops</span>
             </div>
             <div class="metric-card">
               <span class="metric-label">Scheduled Departure</span>
@@ -2551,6 +2687,117 @@
               <span class="metric-label">Route Status</span>
               <div class="metric-value text-emerald">On Schedule</div>
               <span class="metric-trend text-emerald">0 min delay</span>
+            </div>
+          </div>
+
+          <!-- DRIVER 3 WEBCAM BARCODE ATTENDANCE SCANNER -->
+          <div class="content-card mb-6 barcode-scanner-panel" id="driver-3-scanner-panel">
+            <div class="card-header flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <span class="badge badge-emerald text-xs font-bold mb-1">📷 Driver Scanner Prototype</span>
+                <h3 class="card-title">Student College ID Barcode Scanner</h3>
+                <p class="card-subtitle">Scan student ID card barcode via laptop webcam &bull; Verifies student pass, bus match &amp; prevents duplicate boarding</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="badge badge-neutral" id="driver-3-scanner-status-badge">Camera Inactive</span>
+              </div>
+            </div>
+
+            <div class="card-body p-6">
+              <!-- Controls Toolbar -->
+              <div class="scanner-toolbar mb-4">
+                <button type="button" class="btn btn-primary btn-sm flex items-center gap-2" id="driver-3-btn-start-camera" onclick="startDriverScanner(3)">
+                  <span>🎥</span> Start Camera
+                </button>
+                <button type="button" class="btn btn-outline btn-sm flex items-center gap-2" id="driver-3-btn-stop-camera" onclick="stopDriverScanner(3)" disabled>
+                  <span>⏹️</span> Stop Camera
+                </button>
+                <div class="flex items-center gap-2">
+                  <label for="driver-3-camera-select" class="text-xs font-semibold text-muted">Camera:</label>
+                  <select class="form-select text-sm py-1" id="driver-3-camera-select" onchange="changeDriverScannerDevice(3)">
+                    <option value="">Default Laptop Camera</option>
+                  </select>
+                </div>
+                <div class="ml-auto flex items-center gap-2 flex-wrap">
+                  <button type="button" class="btn btn-outline btn-sm flex items-center gap-1" onclick="testScanSampleCard(3)" title="Scan College ID Card (25CSR223)">
+                    <span>🪪</span> Scan Sample ID (25CSR223)
+                  </button>
+                  <label class="btn btn-outline btn-sm flex items-center gap-1 cursor-pointer" title="Upload ID card image file to test barcode decode">
+                    <span>📁</span> Upload Card Image
+                    <input type="file" accept="image/*" style="display: none;" onchange="handleBarcodeImageUpload(event, 3)">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Fast Scanning Pro-Tip Banner -->
+              <div class="mb-3 p-2.5 px-3 rounded bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between">
+                <span>⚡ <strong>Instant Scan Tip:</strong> Hold card steady <strong>~15–20 cm (6–8 in)</strong> from camera with good lighting. Keep barcode level inside the red alignment beam.</span>
+              </div>
+
+              <!-- Viewport & Result Columns -->
+              <div class="grid-2-col gap-6 items-start">
+                <!-- Left: Live Video Viewport -->
+                <div class="scanner-viewport-container">
+                  <div class="scanner-viewport" id="driver-3-scanner-viewport">
+                    <video id="driver-3-scanner-video" class="scanner-video" autoplay muted playsinline></video>
+                    <!-- Targeting reticle & laser animation overlay -->
+                    <div class="scanner-overlay" id="driver-3-scanner-overlay" style="display: none;">
+                      <div class="scanner-reticle">
+                        <div class="scanner-laser"></div>
+                        <div class="reticle-corner top-left"></div>
+                        <div class="reticle-corner top-right"></div>
+                        <div class="reticle-corner bottom-left"></div>
+                        <div class="reticle-corner bottom-right"></div>
+                      </div>
+                      <div class="scanner-guidance-pill">Align 1D Barcode Inside Frame</div>
+                    </div>
+                    <!-- Placeholder when camera is off -->
+                    <div class="scanner-placeholder" id="driver-3-scanner-placeholder">
+                      <div class="placeholder-icon">📷</div>
+                      <p class="font-bold text-navy mb-1">Webcam Scanner Offline</p>
+                      <p class="text-xs text-muted">Click <strong>Start Camera</strong> to activate your laptop webcam, or test with the sample student card.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right: Real-Time Scan Result & Verification Feed -->
+                <div class="scanner-feedback-container">
+                  <div class="result-card p-4 rounded-lg border bg-slate-50" id="driver-3-scan-result-card">
+                    <div class="flex items-center justify-between mb-3">
+                      <span class="text-xs font-bold uppercase tracking-wider text-muted">Boarding Verification Feed</span>
+                      <span class="badge badge-neutral" id="driver-3-scan-badge">Ready To Scan</span>
+                    </div>
+
+                    <!-- Decoded Value Box -->
+                    <div class="decoded-box p-3 bg-white border rounded mb-3">
+                      <div class="text-xs text-muted mb-1">Decoded Barcode:</div>
+                      <div class="font-mono font-bold text-lg text-navy tracking-widest" id="driver-3-decoded-val">&mdash;</div>
+                      <div class="text-xs text-muted mt-1" id="driver-3-barcode-format">Format: Code 128 / Linear 1D</div>
+                    </div>
+
+                    <!-- Student Profile Preview -->
+                    <div class="student-info-box p-3 bg-white border rounded mb-3" id="driver-3-student-info" style="display: none;">
+                      <div class="flex items-start gap-3">
+                        <div class="student-avatar" id="driver-3-student-avatar">🎓</div>
+                        <div class="flex-1">
+                          <h4 class="font-bold text-navy text-sm mb-1" id="driver-3-student-name">Student Name</h4>
+                          <div class="text-xs text-muted" id="driver-3-student-roll">Roll No: &mdash;</div>
+                          <div class="text-xs text-muted" id="driver-3-student-dept">Dept: &mdash;</div>
+                          <div class="text-xs text-muted" id="driver-3-student-stop">Pickup Stop: &mdash;</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Live Status Alert -->
+                    <div id="driver-3-scanner-alert" class="alert-banner alert-info text-sm" style="display: none;">
+                      <div class="alert-content">
+                        <strong id="driver-3-scanner-alert-title">Status</strong>
+                        <p id="driver-3-scanner-alert-msg" class="text-xs mt-1">Ready</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2572,16 +2819,7 @@
                   </tr>
                 </thead>
                 <tbody id="driver-3-manifest-body">
-                  <tr><td>01</td><td><strong>#126</strong></td><td>Deepak R</td><td>Chennimalai</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>02</td><td><strong>#127</strong></td><td>Shalini M</td><td>Vijayamangalam</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><span class="badge badge-success">&check; Boarded</span></td></tr>
-                  <tr><td>03</td><td><strong>#128</strong></td><td>Akash V</td><td>KEC Campus Gate</td><td><span class="badge badge-danger">Unauthorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>04</td><td><strong>#129</strong></td><td>Pavithra K</td><td>Chennimalai</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>05</td><td><strong>#130</strong></td><td>Varun P</td><td>Vijayamangalam</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>06</td><td><strong>#131</strong></td><td>Sandhya S</td><td>KEC Campus Gate</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>07</td><td><strong>#132</strong></td><td>Vikram N</td><td>Chennimalai</td><td><span class="badge badge-success">Authorized</span></td><td>No</td><td><span class="badge badge-neutral">Not Traveling</span></td></tr>
-                  <tr><td>08</td><td><strong>#133</strong></td><td>Archana R</td><td>Vijayamangalam</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>09</td><td><strong>#134</strong></td><td>Gokul D</td><td>KEC Campus Gate</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
-                  <tr><td>10</td><td><strong>#135</strong></td><td>Tharun K</td><td>Chennimalai</td><td><span class="badge badge-success">Authorized</span></td><td>Yes</td><td><label><input type="checkbox"> Boarded</label></td></tr>
+                  <tr id="driver-3-manifest-loading"><td colspan="7" class="text-center p-4 text-muted">Loading live passenger manifest from database...</td></tr>
                 </tbody>
               </table>
             </div>

@@ -35,12 +35,18 @@ public class BackendServer {
         public final String token;
         public final String role; // "admin", "driver", "student"
         public final int studentId;
+        public final int busId;
         public final String name;
 
         public UserSession(String token, String role, int studentId, String name) {
+            this(token, role, studentId, 0, name);
+        }
+
+        public UserSession(String token, String role, int studentId, int busId, String name) {
             this.token = token;
             this.role = role;
             this.studentId = studentId;
+            this.busId = busId;
             this.name = name;
         }
     }
@@ -88,6 +94,7 @@ public class BackendServer {
         server.createContext("/api/routes", BackendServer::routeApi);
         server.createContext("/api/stops", BackendServer::stopsApi);
         server.createContext("/api/fees", BackendServer::feeApi);
+        server.createContext("/api/attendance/scan", BackendServer::attendanceScanApi);
         server.createContext("/api/attendance", BackendServer::attendanceApi);
         server.createContext("/api/requirements", BackendServer::requirementApi);
         server.createContext("/api/manifest", BackendServer::manifestApi);
@@ -234,10 +241,91 @@ public class BackendServer {
                 return;
             }
         } else if ("driver".equalsIgnoreCase(role)) {
-            String busIdStr = form.getOrDefault("bus_id", "1");
-            int busId = 1;
-            try { busId = Integer.parseInt(busIdStr); } catch (Exception ignored) {}
-            userName = "Driver (Bus " + busId + ")";
+            String busIdStr = form.get("bus_id");
+            if (busIdStr == null || busIdStr.isBlank()) busIdStr = form.get("id");
+            String username = form.get("username");
+            String password = form.get("password");
+
+            // Look up driver in MySQL buses table
+            int busId = 0;
+            String driverName = "";
+            String driverPhone = "";
+            String busName = "";
+            String routeName = "";
+            String busNumber = "";
+
+            try (Connection con = DBConnection.getConnection()) {
+                int parsedBusId = 0;
+                if (busIdStr != null && !busIdStr.isBlank()) {
+                    try { parsedBusId = Integer.parseInt(busIdStr.trim()); } catch (Exception ignored) {}
+                } else if (username != null && username.toLowerCase().startsWith("driver")) {
+                    try { parsedBusId = Integer.parseInt(username.toLowerCase().replace("driver", "").trim()); } catch (Exception ignored) {}
+                }
+
+                String cleanPhone = (username != null ? username.replace(" ", "").trim() : "");
+                String findSql = "SELECT bus_id, bus_name, driver_name, driver_phone, bus_number, route_name FROM buses "
+                        + "WHERE bus_id = ? OR driver_name = ? OR REPLACE(driver_phone, ' ', '') = ? OR bus_number = ? LIMIT 1";
+
+                try (PreparedStatement ps = con.prepareStatement(findSql)) {
+                    ps.setInt(1, parsedBusId);
+                    ps.setString(2, username != null ? username.trim() : "");
+                    ps.setString(3, cleanPhone);
+                    ps.setString(4, username != null ? username.trim() : "");
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            busId = rs.getInt("bus_id");
+                            busName = rs.getString("bus_name");
+                            driverName = rs.getString("driver_name");
+                            driverPhone = rs.getString("driver_phone");
+                            busNumber = rs.getString("bus_number");
+                            routeName = rs.getString("route_name");
+                        } else {
+                            send(exchange, 404, "{\"error\":\"No driver or bus record found matching the provided identity.\"}");
+                            return;
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                send(exchange, 500, "{\"error\":\"Database error: " + escape(e.getMessage()) + "\"}");
+                return;
+            }
+
+            // Credential validation: Check password
+            if (password == null || password.isBlank()) {
+                send(exchange, 401, "{\"error\":\"Password is required for driver sign-in.\"}");
+                return;
+            }
+
+            // Valid passwords: "driver123", "password", driver's phone, last 4 digits of phone, or "driver" + busId
+            String cleanPhoneDigits = (driverPhone != null ? driverPhone.replaceAll("\\D", "") : "");
+            boolean passValid = "driver123".equals(password)
+                    || "password".equals(password)
+                    || ("driver" + busId).equalsIgnoreCase(password)
+                    || (cleanPhoneDigits.length() >= 4 && password.equals(cleanPhoneDigits.substring(cleanPhoneDigits.length() - 4)))
+                    || (cleanPhoneDigits.length() >= 5 && password.equals(cleanPhoneDigits));
+
+            if (!passValid) {
+                send(exchange, 401, "{\"error\":\"Invalid driver credentials. Please enter a valid driver password.\"}");
+                return;
+            }
+
+            userName = driverName + " (" + busName + ")";
+            UserSession session = new UserSession(token, role, 0, busId, userName);
+            activeSessions.put(token, session);
+
+            String json = "{\"success\":true,\"message\":\"Driver sign-in successful\","
+                    + "\"token\":\"" + token + "\","
+                    + "\"role\":\"driver\","
+                    + "\"busId\":" + busId + ","
+                    + "\"driverName\":\"" + escape(driverName) + "\","
+                    + "\"driverPhone\":\"" + escape(driverPhone != null ? driverPhone : "") + "\","
+                    + "\"busName\":\"" + escape(busName) + "\","
+                    + "\"busNumber\":\"" + escape(busNumber != null ? busNumber : "") + "\","
+                    + "\"routeName\":\"" + escape(routeName != null ? routeName : "") + "\","
+                    + "\"name\":\"" + escape(userName) + "\"}";
+            send(exchange, 200, json);
+            return;
         } else {
             role = "admin";
             userName = "Transport Administrator";
@@ -1777,10 +1865,12 @@ public class BackendServer {
                 String resolveBdSql = "UPDATE breakdowns SET status = 'Resolved', resolved_at = CURRENT_TIMESTAMP WHERE broken_bus_id = ? AND status = 'Active'";
                 String restoreBusSql = "UPDATE buses SET status = 'Active' WHERE bus_id = ?";
                 String restoreRepSql = "UPDATE buses SET status = 'Standby Depot' WHERE bus_id = 4";
+                String restoreStudentsSql = "UPDATE students SET assigned_bus_id = ? WHERE assigned_bus_id = 4";
 
                 try (PreparedStatement ps1 = con.prepareStatement(resolveBdSql);
                      PreparedStatement ps2 = con.prepareStatement(restoreBusSql);
-                     PreparedStatement ps3 = con.prepareStatement(restoreRepSql)) {
+                     PreparedStatement ps3 = con.prepareStatement(restoreRepSql);
+                     PreparedStatement ps4 = con.prepareStatement(restoreStudentsSql)) {
                     ps1.setInt(1, brokenBusId);
                     int updated = ps1.executeUpdate();
                     if (updated == 0) {
@@ -1791,7 +1881,11 @@ public class BackendServer {
                     ps2.executeUpdate();
                     ps3.executeUpdate();
 
-                    send(exchange, 200, "{\"message\":\"Breakdown resolved successfully. Regular bus restored to Active and Standby Mini Bus returned to depot.\",\"busId\":" + brokenBusId + "}");
+                    // Restore reassigned students back to regular bus
+                    ps4.setInt(1, brokenBusId);
+                    ps4.executeUpdate();
+
+                    send(exchange, 200, "{\"message\":\"Breakdown resolved successfully. Regular bus restored to Active, standby Mini Bus returned to depot, and students reassigned to regular bus.\",\"busId\":" + brokenBusId + "}");
                 }
                 return;
             }
@@ -1803,6 +1897,18 @@ public class BackendServer {
                 return;
             }
             int brokenBusId = Integer.parseInt(busIdStr);
+
+            // Prevent duplicate deployments for the same broken bus
+            String checkActiveSql = "SELECT breakdown_id FROM breakdowns WHERE broken_bus_id = ? AND status = 'Active'";
+            try (PreparedStatement psCheck = con.prepareStatement(checkActiveSql)) {
+                psCheck.setInt(1, brokenBusId);
+                try (ResultSet rsCheck = psCheck.executeQuery()) {
+                    if (rsCheck.next()) {
+                        send(exchange, 400, "{\"error\":\"An active breakdown recovery is already deployed for Bus #" + brokenBusId + ". Please resolve the active incident before deploying another.\"}");
+                        return;
+                    }
+                }
+            }
 
             String repIdStr = form.get("replacement_id");
             int replacementBusId = 4;
@@ -1819,40 +1925,92 @@ public class BackendServer {
             String breakdownLoc = form.getOrDefault("breakdown_location", "En Route");
             String altRoute = form.getOrDefault("alternate_route", "");
 
-            String insertBdSql = "INSERT INTO breakdowns (broken_bus_id, replacement_bus_id, delay_minutes, status, breakdown_location, alternate_route) "
-                    + "VALUES (?, ?, ?, 'Active', ?, ?)";
-            String updateBrokenSql = "UPDATE buses SET status = 'Breakdown Reported' WHERE bus_id = ?";
-            String updateRepSql = "UPDATE buses SET status = 'Deployed (Relief)' WHERE bus_id = ?";
+            // Query Standby Mini Bus capacity
+            int miniBusCapacity = 10;
+            try (PreparedStatement psCap = con.prepareStatement("SELECT capacity FROM buses WHERE bus_id = ?")) {
+                psCap.setInt(1, replacementBusId);
+                try (ResultSet rsCap = psCap.executeQuery()) {
+                    if (rsCap.next()) miniBusCapacity = rsCap.getInt("capacity");
+                }
+            }
+
+            // Identify affected students assigned to the broken bus
+            List<Integer> affectedStudentIds = new ArrayList<>();
+            try (PreparedStatement psStu = con.prepareStatement("SELECT student_id FROM students WHERE assigned_bus_id = ? ORDER BY student_id ASC")) {
+                psStu.setInt(1, brokenBusId);
+                try (ResultSet rsStu = psStu.executeQuery()) {
+                    while (rsStu.next()) {
+                        affectedStudentIds.add(rsStu.getInt("student_id"));
+                    }
+                }
+            }
 
             con.setAutoCommit(false);
-            try (PreparedStatement psIns = con.prepareStatement(insertBdSql, Statement.RETURN_GENERATED_KEYS);
-                 PreparedStatement psUpBroken = con.prepareStatement(updateBrokenSql);
-                 PreparedStatement psUpRep = con.prepareStatement(updateRepSql)) {
-
-                psIns.setInt(1, brokenBusId);
-                psIns.setInt(2, replacementBusId);
-                psIns.setInt(3, delayMinutes);
-                psIns.setString(4, breakdownLoc);
-                psIns.setString(5, altRoute);
-                psIns.executeUpdate();
-
+            try {
+                // 1. Insert breakdown record
+                String insertBdSql = "INSERT INTO breakdowns (broken_bus_id, replacement_bus_id, delay_minutes, status, breakdown_location, alternate_route) "
+                        + "VALUES (?, ?, ?, 'Active', ?, ?)";
                 int newBdId = 0;
-                try (ResultSet generatedKeys = psIns.getGeneratedKeys()) {
-                    if (generatedKeys.next()) newBdId = generatedKeys.getInt(1);
+                try (PreparedStatement psIns = con.prepareStatement(insertBdSql, Statement.RETURN_GENERATED_KEYS)) {
+                    psIns.setInt(1, brokenBusId);
+                    psIns.setInt(2, replacementBusId);
+                    psIns.setInt(3, delayMinutes);
+                    psIns.setString(4, breakdownLoc);
+                    psIns.setString(5, altRoute);
+                    psIns.executeUpdate();
+                    try (ResultSet gk = psIns.getGeneratedKeys()) {
+                        if (gk.next()) newBdId = gk.getInt(1);
+                    }
                 }
 
-                psUpBroken.setInt(1, brokenBusId);
-                psUpBroken.executeUpdate();
+                // 2. Update regular bus status and mini bus status in MySQL
+                try (PreparedStatement psUpBroken = con.prepareStatement("UPDATE buses SET status = 'Breakdown Reported' WHERE bus_id = ?");
+                     PreparedStatement psUpRep = con.prepareStatement("UPDATE buses SET status = 'Deployed (Relief)' WHERE bus_id = ?")) {
+                    psUpBroken.setInt(1, brokenBusId);
+                    psUpBroken.executeUpdate();
+                    psUpRep.setInt(1, replacementBusId);
+                    psUpRep.executeUpdate();
+                }
 
-                psUpRep.setInt(1, replacementBusId);
-                psUpRep.executeUpdate();
+                // 3. Reassign affected students to the standby mini bus up to capacity
+                int accommodatedCount = 0;
+                String reassignSql = "UPDATE students SET assigned_bus_id = ? WHERE student_id = ?";
+                try (PreparedStatement psReassign = con.prepareStatement(reassignSql)) {
+                    for (int sid : affectedStudentIds) {
+                        if (accommodatedCount < miniBusCapacity) {
+                            psReassign.setInt(1, replacementBusId);
+                            psReassign.setInt(2, sid);
+                            psReassign.executeUpdate();
+                            accommodatedCount++;
+                        }
+                    }
+                }
+
+                // 4. Create in-app notifications for affected students
+                String insNoticeSql = "INSERT INTO student_notifications (student_id, breakdown_id, title, message) VALUES (?, ?, ?, ?)";
+                try (PreparedStatement psNotice = con.prepareStatement(insNoticeSql)) {
+                    for (int sid : affectedStudentIds) {
+                        psNotice.setInt(1, sid);
+                        psNotice.setInt(2, newBdId);
+                        psNotice.setString(3, "Bus Breakdown & Relief Shuttle Dispatched");
+                        psNotice.setString(4, "Your regular bus has experienced a breakdown. A replacement mini bus has been assigned and is on its way to your pickup stop.");
+                        psNotice.executeUpdate();
+                    }
+                }
 
                 con.commit();
-                send(exchange, 200, "{\"message\":\"Standby Mini Bus successfully deployed and " + delayMinutes + " minute delay notice broadcasted to student transit hub.\","
-                        + "\"breakdownId\":" + newBdId
-                        + ",\"brokenBusId\":" + brokenBusId
-                        + ",\"replacementBusId\":" + replacementBusId
-                        + ",\"delayMinutes\":" + delayMinutes + "}");
+
+                String json = "{\"success\":true,\"message\":\"Standby Mini Bus successfully deployed and " + delayMinutes + " minute delay notice broadcasted to student transit hub.\","
+                        + "\"breakdownId\":" + newBdId + ","
+                        + "\"brokenBusId\":" + brokenBusId + ","
+                        + "\"replacementBusId\":" + replacementBusId + ","
+                        + "\"delayMinutes\":" + delayMinutes + ","
+                        + "\"deployedBus\":\"Mini Bus (TN-33-MB-201)\","
+                        + "\"accommodatedCount\":" + accommodatedCount + ","
+                        + "\"totalAffected\":" + affectedStudentIds.size() + ","
+                        + "\"brokenBusStatus\":\"Breakdown Reported\","
+                        + "\"miniBusStatus\":\"Deployed (Relief)\"}";
+                send(exchange, 200, json);
             } catch (SQLException ex) {
                 con.rollback();
                 throw ex;
@@ -1945,24 +2103,45 @@ public class BackendServer {
                     boolean auth = rs.getBoolean("transport_authorized");
                     String feeStatus = rs.getString("fee_status");
                     if (feeStatus == null) feeStatus = auth ? "Paid" : "Pending";
+                    String pickupStop = rs.getString("pickup_stop");
+                    if (pickupStop == null || pickupStop.isBlank()) pickupStop = "Perundurai Old Bus Stand";
+                    double distKm = getStopDistanceKm(con, pickupStop);
+                    double calculatedFee = Math.round(distKm * 2.0 * 100.0) / 100.0;
 
-                    // Check active breakdowns affecting this bus
+                    // Check active breakdowns and notifications affecting this student
                     int busId = rs.getInt("assigned_bus_id");
                     boolean hasAlert = false;
                     String alertTitle = "";
                     String alertMessage = "";
                     int delayMinutes = 0;
 
-                    if (busId > 0) {
-                        String alertSql = "SELECT delay_minutes, breakdown_location, alternate_route FROM breakdowns WHERE broken_bus_id = ? AND status = 'Active'";
+                    // 1. Check student_notifications
+                    String noticeSql = "SELECT title, message FROM student_notifications WHERE student_id = ? ORDER BY notification_id DESC LIMIT 1";
+                    try (PreparedStatement psNotice = con.prepareStatement(noticeSql)) {
+                        psNotice.setInt(1, studentId);
+                        try (ResultSet rsNotice = psNotice.executeQuery()) {
+                            if (rsNotice.next()) {
+                                hasAlert = true;
+                                alertTitle = rsNotice.getString("title");
+                                alertMessage = rsNotice.getString("message");
+                            }
+                        }
+                    }
+
+                    // 2. Fallback check for active breakdown on assigned bus (or replacement bus 4)
+                    if (!hasAlert && busId > 0) {
+                        String alertSql = "SELECT delay_minutes, breakdown_location, alternate_route FROM breakdowns "
+                                + "WHERE (broken_bus_id = ? OR (replacement_bus_id = ? AND ? = 4)) AND status = 'Active'";
                         try (PreparedStatement psAlert = con.prepareStatement(alertSql)) {
                             psAlert.setInt(1, busId);
+                            psAlert.setInt(2, busId);
+                            psAlert.setInt(3, busId);
                             try (ResultSet rsAlert = psAlert.executeQuery()) {
                                 if (rsAlert.next()) {
                                     hasAlert = true;
                                     delayMinutes = rsAlert.getInt("delay_minutes");
-                                    alertTitle = "Emergency Breakdown Delay: " + delayMinutes + " mins";
-                                    alertMessage = "Bus #" + busId + " reported breakdown at " + rsAlert.getString("breakdown_location") + ". Standby Mini Bus deployed.";
+                                    alertTitle = "Bus Breakdown & Relief Shuttle Dispatched";
+                                    alertMessage = "Your regular bus has experienced a breakdown. A replacement mini bus has been assigned and is on its way to your pickup stop.";
                                 }
                             }
                         }
@@ -1973,8 +2152,10 @@ public class BackendServer {
                             + ",\"student\":{\"id\":" + rs.getInt("student_id") + ",\"name\":\"" + escape(rs.getString("name")) + "\",\"regNo\":\"" + escape(rs.getString("roll_number")) + "\",\"rollNumber\":\"" + escape(rs.getString("roll_number")) + "\"}"
                             .concat(",\"rollNumber\":\"") + escape(rs.getString("roll_number")) + "\""
                             + ",\"department\":\"" + escape(rs.getString("department")) + "\""
-                            + ",\"pickupStop\":\"" + escape(rs.getString("pickup_stop")) + "\""
-                            + ",\"stop\":\"" + escape(rs.getString("pickup_stop")) + "\""
+                            + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
+                            + ",\"stop\":\"" + escape(pickupStop) + "\""
+                            + ",\"distanceKm\":" + distKm
+                            + ",\"ratePerKm\":2.0"
                             + ",\"bus\":\"" + escape(rs.getString("bus_name")) + "\""
                             + ",\"busNumber\":\"" + escape(rs.getString("bus_number")) + "\""
                             + ",\"feeStatus\":\"" + escape(feeStatus) + "\""
@@ -1982,13 +2163,15 @@ public class BackendServer {
                             + ",\"authorized\":" + auth
                             + ",\"assignedBus\":{"
                             + "\"busId\":" + busId
-                            + ",\"name\":\"" + escape(rs.getString("bus_name")) + "\""
+                            + "\"name\":\"" + escape(rs.getString("bus_name")) + "\""
                             + ",\"number\":\"" + escape(rs.getString("bus_number")) + "\""
                             + ",\"driver\":\"" + escape(rs.getString("driver_name")) + "\""
                             + ",\"driverPhone\":\"" + escape(rs.getString("driver_phone")) + "\""
                             + ",\"status\":\"" + escape(rs.getString("bus_status")) + "\""
                             + "},\"fees\":{"
-                            + "\"amount\":" + rs.getDouble("fee_amount")
+                            + "\"amount\":" + calculatedFee
+                            + ",\"distanceKm\":" + distKm
+                            + ",\"ratePerKm\":2.0"
                             + ",\"status\":\"" + escape(feeStatus) + "\""
                             + "},\"attendance\":{"
                             + "\"todayStatus\":\"" + escape(rs.getString("attendance_status") != null ? rs.getString("attendance_status") : "Present") + "\""
@@ -2131,12 +2314,14 @@ public class BackendServer {
         int studentId = resolveStudentId(exchange, exchange.getRequestURI().getQuery());
         if (!verifyStudentAccess(exchange, studentId)) return;
 
-        String sql = "SELECT bd.breakdown_id, bd.broken_bus_id, bd.delay_minutes, bd.breakdown_location, "
-                + "bd.alternate_route, bd.reported_at, b.bus_name, b.route_name "
-                + "FROM breakdowns bd "
-                + "JOIN students s ON s.assigned_bus_id = bd.broken_bus_id "
-                + "JOIN buses b ON bd.broken_bus_id = b.bus_id "
-                + "WHERE s.student_id = ? AND bd.status = 'Active'";
+        String sql = "SELECT sn.notification_id, sn.title, sn.message, sn.created_at, "
+                + "bd.breakdown_id, bd.broken_bus_id, bd.delay_minutes, bd.breakdown_location, "
+                + "bd.alternate_route, b.bus_name "
+                + "FROM student_notifications sn "
+                + "LEFT JOIN breakdowns bd ON sn.breakdown_id = bd.breakdown_id "
+                + "LEFT JOIN buses b ON bd.broken_bus_id = b.bus_id "
+                + "WHERE sn.student_id = ? "
+                + "ORDER BY sn.notification_id DESC";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -2147,15 +2332,51 @@ public class BackendServer {
                 while (rs.next()) {
                     if (!first) json.append(',');
                     first = false;
-                    json.append("{\"id\":").append(rs.getInt("breakdown_id"))
+                    String busName = rs.getString("bus_name");
+                    if (busName == null) busName = "College Bus";
+                    json.append("{\"id\":").append(rs.getInt("notification_id"))
+                        .append(",\"breakdownId\":").append(rs.getInt("breakdown_id"))
                         .append(",\"busId\":").append(rs.getInt("broken_bus_id"))
-                        .append(",\"busName\":\"").append(escape(rs.getString("bus_name"))).append("\"")
+                        .append(",\"busName\":\"").append(escape(busName)).append("\"")
+                        .append(",\"title\":\"").append(escape(rs.getString("title"))).append("\"")
+                        .append(",\"message\":\"").append(escape(rs.getString("message"))).append("\"")
                         .append(",\"delayMinutes\":").append(rs.getInt("delay_minutes"))
-                        .append(",\"location\":\"").append(escape(rs.getString("breakdown_location"))).append("\"")
-                        .append(",\"alternateRoute\":\"").append(escape(rs.getString("alternate_route"))).append("\"")
-                        .append(",\"time\":\"").append(rs.getTimestamp("reported_at") != null ? rs.getTimestamp("reported_at").toString() : "").append("\"")
+                        .append(",\"location\":\"").append(escape(rs.getString("breakdown_location") != null ? rs.getString("breakdown_location") : "En Route")).append("\"")
+                        .append(",\"alternateRoute\":\"").append(escape(rs.getString("alternate_route") != null ? rs.getString("alternate_route") : "")).append("\"")
+                        .append(",\"time\":\"").append(rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : "").append("\"")
                         .append("}");
                 }
+
+                // If no notifications found in student_notifications, fallback to active breakdown check
+                if (first) {
+                    String fallbackSql = "SELECT bd.breakdown_id, bd.broken_bus_id, bd.delay_minutes, bd.breakdown_location, "
+                            + "bd.alternate_route, bd.reported_at, b.bus_name "
+                            + "FROM breakdowns bd "
+                            + "JOIN students s ON (s.assigned_bus_id = bd.broken_bus_id OR s.assigned_bus_id = bd.replacement_bus_id) "
+                            + "JOIN buses b ON bd.broken_bus_id = b.bus_id "
+                            + "WHERE s.student_id = ? AND bd.status = 'Active'";
+                    try (PreparedStatement psFb = con.prepareStatement(fallbackSql)) {
+                        psFb.setInt(1, studentId);
+                        try (ResultSet rsFb = psFb.executeQuery()) {
+                            while (rsFb.next()) {
+                                if (!first) json.append(',');
+                                first = false;
+                                json.append("{\"id\":").append(rsFb.getInt("breakdown_id"))
+                                    .append(",\"breakdownId\":").append(rsFb.getInt("breakdown_id"))
+                                    .append(",\"busId\":").append(rsFb.getInt("broken_bus_id"))
+                                    .append(",\"busName\":\"").append(escape(rsFb.getString("bus_name"))).append("\"")
+                                    .append(",\"title\":\"Bus Breakdown & Relief Shuttle Dispatched\"")
+                                    .append(",\"message\":\"Your regular bus has experienced a breakdown. A replacement mini bus has been assigned and is on its way to your pickup stop.\"")
+                                    .append(",\"delayMinutes\":").append(rsFb.getInt("delay_minutes"))
+                                    .append(",\"location\":\"").append(escape(rsFb.getString("breakdown_location"))).append("\"")
+                                    .append(",\"alternateRoute\":\"").append(escape(rsFb.getString("alternate_route") != null ? rsFb.getString("alternate_route") : "")).append("\"")
+                                    .append(",\"time\":\"").append(rsFb.getTimestamp("reported_at") != null ? rsFb.getTimestamp("reported_at").toString() : "").append("\"")
+                                    .append("}");
+                            }
+                        }
+                    }
+                }
+
                 json.append(']');
                 send(exchange, 200, json.toString());
             }
@@ -2238,7 +2459,7 @@ public class BackendServer {
         int studentId = resolveStudentId(exchange, exchange.getRequestURI().getQuery());
         if (!verifyStudentAccess(exchange, studentId)) return;
 
-        String sql = "SELECT s.student_id, s.name, s.transport_authorized, "
+        String sql = "SELECT s.student_id, s.name, s.pickup_stop, s.transport_authorized, "
                 + "f.amount, f.payment_status, f.payment_date "
                 + "FROM students s "
                 + "LEFT JOIN fees f ON s.student_id = f.student_id "
@@ -2252,11 +2473,17 @@ public class BackendServer {
                     boolean auth = rs.getBoolean("transport_authorized");
                     String status = rs.getString("payment_status");
                     if (status == null) status = auth ? "Paid" : "Pending";
-                    double amount = rs.getDouble("amount");
-                    if (amount <= 0) amount = 12000.00;
+                    String pickupStop = rs.getString("pickup_stop");
+                    if (pickupStop == null || pickupStop.isBlank()) pickupStop = "Perundurai Old Bus Stand";
+                    double distKm = getStopDistanceKm(con, pickupStop);
+                    double rate = 2.0;
+                    double calculatedFee = Math.round(distKm * rate * 100.0) / 100.0;
 
                     String json = "{\"studentId\":" + studentId
-                            + ",\"amount\":" + amount
+                            + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
+                            + ",\"distanceKm\":" + distKm
+                            + ",\"ratePerKm\":" + rate
+                            + ",\"amount\":" + calculatedFee
                             + ",\"status\":\"" + escape(status) + "\""
                             + ",\"cleared\":" + "Paid".equalsIgnoreCase(status)
                             + ",\"paymentDate\":\"" + (rs.getDate("payment_date") != null ? rs.getDate("payment_date").toString() : "") + "\"}";
@@ -2357,6 +2584,10 @@ public class BackendServer {
     private static void attendanceApi(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Session-Token, X-User-Role, X-Student-Id");
+        if (exchange.getRequestURI().getPath().endsWith("/scan")) {
+            attendanceScanApi(exchange);
+            return;
+        }
         if ("OPTIONS".equals(exchange.getRequestMethod())) {
             allow(exchange, "GET");
             return;
@@ -2453,6 +2684,268 @@ public class BackendServer {
         }
     }
 
+    /**
+     * Driver-Facing Student ID Barcode Scanning & Safe Boarding Verification Endpoint
+     * POST /api/attendance/scan (or GET with query params for testing)
+     * Validates student roll/id against MySQL, checks fee eligibility, verifies bus assignment,
+     * prevents duplicate scans on the same trip/day, and updates attendance & trip metrics.
+     */
+    private static void attendanceScanApi(HttpExchange exchange) throws IOException {
+        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Session-Token, X-User-Role, X-Student-Id");
+        if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(204, -1);
+            return;
+        }
+
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod()) && !"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+            send(exchange, 405, "{\"error\":\"Method not allowed. Use POST.\"}");
+            return;
+        }
+
+        Map<String, String> form;
+        if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            form = formData(readBody(exchange));
+        } else {
+            form = new HashMap<>();
+            String query = exchange.getRequestURI().getQuery();
+            if (query != null) {
+                for (String item : query.split("&")) {
+                    String[] pair = item.split("=", 2);
+                    if (pair.length == 2) {
+                        form.put(URLDecoder.decode(pair[0], StandardCharsets.UTF_8),
+                                 URLDecoder.decode(pair[1], StandardCharsets.UTF_8));
+                    }
+                }
+            }
+        }
+
+        String rawCode = form.get("barcode");
+        if (rawCode == null) rawCode = form.get("code");
+        if (rawCode == null) rawCode = form.get("roll_number");
+        if (rawCode == null) rawCode = form.get("student_id");
+        if (rawCode == null) rawCode = form.get("id");
+
+        if (rawCode == null || rawCode.trim().isEmpty()) {
+            send(exchange, 400, "{\"success\":false,\"status\":\"INVALID_INPUT\",\"message\":\"Missing student barcode identifier.\"}");
+            return;
+        }
+
+        rawCode = rawCode.trim();
+
+        int busId = 1;
+        if (form.containsKey("bus_id")) {
+            try { busId = Integer.parseInt(form.get("bus_id")); } catch (Exception ignored) {}
+        } else if (form.containsKey("busId")) {
+            try { busId = Integer.parseInt(form.get("busId")); } catch (Exception ignored) {}
+        }
+
+        try (Connection con = DBConnection.getConnection()) {
+            // 1. Look up student by roll_number, student_id, or formatted roll
+            String stuSql = "SELECT s.student_id, s.name, s.roll_number, s.department, s.transport_authorized, "
+                    + "s.assigned_bus_id, s.pickup_stop, "
+                    + "COALESCE(b.bus_name, 'Unallocated') AS bus_name, "
+                    + "COALESCE(b.bus_number, 'N/A') AS bus_number "
+                    + "FROM students s "
+                    + "LEFT JOIN buses b ON s.assigned_bus_id = b.bus_id "
+                    + "WHERE s.roll_number = ? "
+                    + "   OR CAST(s.student_id AS CHAR) = ? "
+                    + "   OR s.roll_number = CONCAT('STU', ?) "
+                    + "   OR s.roll_number LIKE CONCAT('%', ?) "
+                    + "ORDER BY CASE WHEN s.roll_number = ? THEN 1 WHEN CAST(s.student_id AS CHAR) = ? THEN 2 ELSE 3 END "
+                    + "LIMIT 1";
+
+            int studentId = 0;
+            String name = "";
+            String rollNumber = "";
+            String department = "";
+            boolean authorized = false;
+            int assignedBusId = 0;
+            String pickupStop = "";
+            String busName = "";
+            String busNumber = "";
+
+            try (PreparedStatement ps = con.prepareStatement(stuSql)) {
+                ps.setString(1, rawCode);
+                ps.setString(2, rawCode);
+                ps.setString(3, rawCode);
+                ps.setString(4, rawCode);
+                ps.setString(5, rawCode);
+                ps.setString(6, rawCode);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        studentId = rs.getInt("student_id");
+                        name = rs.getString("name");
+                        rollNumber = rs.getString("roll_number");
+                        department = rs.getString("department");
+                        authorized = rs.getBoolean("transport_authorized");
+                        assignedBusId = rs.getInt("assigned_bus_id");
+                        pickupStop = rs.getString("pickup_stop");
+                        busName = rs.getString("bus_name");
+                        busNumber = rs.getString("bus_number");
+                    }
+                }
+            }
+
+            if (studentId == 0) {
+                send(exchange, 404, "{\"success\":false,\"status\":\"STUDENT_NOT_FOUND\",\"barcode\":\"" 
+                        + escape(rawCode) + "\",\"message\":\"Unregistered Barcode: No student found matching '" 
+                        + escape(rawCode) + "'.\"}");
+                return;
+            }
+
+            // 2. Validate Transport Authorization (Fee paid / Eligibility)
+            if (!authorized) {
+                String resp = "{\"success\":false,\"status\":\"UNAUTHORIZED\""
+                        + ",\"studentId\":" + studentId
+                        + ",\"name\":\"" + escape(name) + "\""
+                        + ",\"rollNumber\":\"" + escape(rollNumber) + "\""
+                        + ",\"department\":\"" + escape(department) + "\""
+                        + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
+                        + ",\"assignedBusId\":" + assignedBusId
+                        + ",\"message\":\"Access Denied: Student " + escape(name) + " (" + escape(rollNumber) 
+                        + ") has NOT paid college transport fees. Unapproved for bus transit.\"}";
+                send(exchange, 403, resp);
+                return;
+            }
+
+            // 3. Validate Bus Allocation (Prevent boarding wrong bus)
+            if (assignedBusId > 0 && assignedBusId != busId) {
+                String resp = "{\"success\":false,\"status\":\"WRONG_BUS\""
+                        + ",\"studentId\":" + studentId
+                        + ",\"name\":\"" + escape(name) + "\""
+                        + ",\"rollNumber\":\"" + escape(rollNumber) + "\""
+                        + ",\"department\":\"" + escape(department) + "\""
+                        + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
+                        + ",\"assignedBusId\":" + assignedBusId
+                        + ",\"assignedBusName\":\"" + escape(busName) + "\""
+                        + ",\"scannedBusId\":" + busId
+                        + ",\"message\":\"Wrong Bus Alert: " + escape(name) + " (" + escape(rollNumber) 
+                        + ") is allocated to Bus " + assignedBusId + " (" + escape(busName) 
+                        + "), not Bus " + busId + "!\"}";
+                send(exchange, 400, resp);
+                return;
+            }
+
+            // 4. Duplicate Check for Same Student on Today's Trip
+            String dupSql = "SELECT attendance_id, boarded, status, attendance_date FROM attendance "
+                    + "WHERE student_id = ? AND attendance_date = CURRENT_DATE";
+            boolean alreadyBoarded = false;
+            try (PreparedStatement ps = con.prepareStatement(dupSql)) {
+                ps.setInt(1, studentId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        alreadyBoarded = rs.getBoolean("boarded");
+                    }
+                }
+            }
+
+            if (alreadyBoarded) {
+                String resp = "{\"success\":false,\"status\":\"ALREADY_BOARDED\""
+                        + ",\"studentId\":" + studentId
+                        + ",\"name\":\"" + escape(name) + "\""
+                        + ",\"rollNumber\":\"" + escape(rollNumber) + "\""
+                        + ",\"department\":\"" + escape(department) + "\""
+                        + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
+                        + ",\"assignedBusId\":" + assignedBusId
+                        + ",\"message\":\"Duplicate Boarding Notice: Student " + escape(name) 
+                        + " (" + escape(rollNumber) + ") has ALREADY boarded Bus " + busId + " today.\"}";
+                send(exchange, 409, resp);
+                return;
+            }
+
+            // 5. Commit Attendance & Safe Boarding to MySQL
+            String upsertSql = "INSERT INTO attendance (student_id, attendance_date, status, boarded, travel_intention) "
+                    + "VALUES (?, CURRENT_DATE, 'Present', 1, 1) "
+                    + "ON DUPLICATE KEY UPDATE status = 'Present', boarded = 1";
+            try (PreparedStatement ps = con.prepareStatement(upsertSql)) {
+                ps.setInt(1, studentId);
+                ps.executeUpdate();
+            }
+
+            // 6. Calculate Real-Time Bus Passenger Statistics
+            int boardedCount = 0;
+            int totalAllocated = 0;
+            String statSql = "SELECT "
+                    + "(SELECT COUNT(*) FROM attendance a JOIN students s ON a.student_id = s.student_id "
+                    + " WHERE s.assigned_bus_id = ? AND a.attendance_date = CURRENT_DATE AND a.boarded = 1) AS boarded_count, "
+                    + "(SELECT COUNT(*) FROM students WHERE assigned_bus_id = ?) AS total_allocated";
+            try (PreparedStatement ps = con.prepareStatement(statSql)) {
+                ps.setInt(1, busId);
+                ps.setInt(2, busId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        boardedCount = rs.getInt("boarded_count");
+                        totalAllocated = rs.getInt("total_allocated");
+                    }
+                }
+            }
+
+            String resp = "{\"success\":true,\"status\":\"BOARDED_SUCCESS\""
+                    + ",\"barcode\":\"" + escape(rawCode) + "\""
+                    + ",\"student\":{"
+                    + "\"id\":" + studentId
+                    + ",\"name\":\"" + escape(name) + "\""
+                    + ",\"rollNumber\":\"" + escape(rollNumber) + "\""
+                    + ",\"department\":\"" + escape(department) + "\""
+                    + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
+                    + ",\"authorized\":true"
+                    + ",\"assignedBusId\":" + assignedBusId
+                    + ",\"busName\":\"" + escape(busName) + "\""
+                    + ",\"busNumber\":\"" + escape(busNumber) + "\""
+                    + ",\"boarded\":true"
+                    + ",\"attendanceDate\":\"" + LocalDate.now().toString() + "\""
+                    + ",\"attendanceStatus\":\"Present\""
+                    + "},\"tripStats\":{"
+                    + "\"busId\":" + busId
+                    + ",\"boardedCount\":" + boardedCount
+                    + ",\"totalAllocated\":" + totalAllocated
+                    + "},\"message\":\"Thank you! Attendance marked. (" + escape(name) + " - " + escape(rollNumber) + ")\"}";
+
+            send(exchange, 200, resp);
+
+        } catch (SQLException e) {
+            send(exchange, 500, "{\"success\":false,\"error\":\"Database error: " + escape(e.getMessage()) + "\"}");
+        }
+    }
+
+    /**
+     * Resolves the pickup stop distance to Kongu Engineering College hub using the
+     * project road network and Dijkstra graph distances.
+     */
+    public static double getStopDistanceKm(Connection con, String stopName) {
+        if (stopName == null || stopName.isBlank()) return 10.0;
+        String clean = stopName.trim();
+        String lower = clean.toLowerCase();
+        if (lower.contains("erode central")) return 30.6;
+        if (lower.contains("thindal")) return 25.1;
+        if (lower.contains("perundurai old") || lower.equals("perundurai")) return 3.2;
+        if (lower.contains("bhavani")) return 18.9;
+        if (lower.contains("lakshmi nagar")) return 12.1;
+        if (lower.contains("perundurai rs") || lower.contains("railway")) return 4.1;
+        if (lower.contains("chennimalai")) return 16.7;
+        if (lower.contains("vijayamangalam")) return 10.1;
+        if (lower.contains("kec campus gate") || lower.contains("campus gate")) return 1.2;
+        if (lower.contains("depot")) return 2.6;
+        if (lower.contains("chithode")) return 19.6;
+        if (lower.contains("modakkurichi")) return 31.7;
+
+        try {
+            Map<String, List<DijkstraRouter.RoadEdge>> graph = DijkstraRouter.loadGraph(con);
+            String resolved = DijkstraRouter.resolveNodeName(graph, clean);
+            if (resolved != null) {
+                DijkstraRouter.RouteResult res = DijkstraRouter.findShortestRoute(graph, resolved, "Kongu Engineering College");
+                if (res != null && res.reachable && res.totalDistanceKm > 0) {
+                    return Math.round(res.totalDistanceKm * 10.0) / 10.0;
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return 10.0;
+    }
+
     private static void feeApi(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Session-Token, X-User-Role, X-Student-Id");
@@ -2462,11 +2955,10 @@ public class BackendServer {
         }
 
         if ("GET".equals(exchange.getRequestMethod())) {
-            String sql = "SELECT s.student_id, s.name, s.transport_authorized, s.assigned_bus_id, "
+            String sql = "SELECT s.student_id, s.name, s.pickup_stop, s.transport_authorized, s.assigned_bus_id, "
                     + "COALESCE(b.bus_name, 'Unallocated') AS bus_name, "
-                    + "f.fee_id, "
-                    + "COALESCE(f.amount, 12000.00) AS amount, "
-                    + "COALESCE(f.payment_status, CASE WHEN s.transport_authorized = 1 THEN 'Paid' ELSE 'Unpaid' END) AS payment_status, "
+                    + "f.fee_id, f.amount, "
+                    + "COALESCE(f.payment_status, CASE WHEN s.transport_authorized = 1 THEN 'Paid' ELSE 'Pending' END) AS payment_status, "
                     + "f.payment_date "
                     + "FROM students s "
                     + "LEFT JOIN buses b ON s.assigned_bus_id = b.bus_id "
@@ -2484,17 +2976,37 @@ public class BackendServer {
                     first = false;
 
                     int stuId = rs.getInt("student_id");
-                    double amt = rs.getDouble("amount");
+                    String stopName = rs.getString("pickup_stop");
+                    if (stopName == null || stopName.isBlank()) stopName = "Perundurai Old Bus Stand";
+                    double distKm = getStopDistanceKm(con, stopName);
+                    double rate = 2.0;
+                    double calculatedFee = Math.round(distKm * rate * 100.0) / 100.0;
                     String status = rs.getString("payment_status");
+                    if (status == null || status.isBlank()) status = "Paid";
                     Date payDate = rs.getDate("payment_date");
                     boolean auth = rs.getBoolean("transport_authorized");
                     boolean isPaid = "Paid".equalsIgnoreCase(status);
+
+                    // Sync database fee record so actual distance-based fee is persisted
+                    try (PreparedStatement psSync = con.prepareStatement(
+                            "INSERT INTO fees (student_id, amount, payment_status, payment_date) VALUES (?, ?, ?, ?) " +
+                            "ON DUPLICATE KEY UPDATE amount = VALUES(amount)")) {
+                        psSync.setInt(1, stuId);
+                        psSync.setDouble(2, calculatedFee);
+                        psSync.setString(3, status);
+                        psSync.setDate(4, payDate != null ? payDate : Date.valueOf(LocalDate.now()));
+                        psSync.executeUpdate();
+                    } catch (Exception ignored) {}
 
                     json.append("{\"id\":").append(stuId)
                         .append(",\"studentId\":").append(stuId)
                         .append(",\"name\":\"").append(escape(rs.getString("name")))
                         .append("\",\"bus\":\"").append(escape(rs.getString("bus_name")))
-                        .append("\",\"amount\":").append(amt)
+                        .append("\",\"pickupStop\":\"").append(escape(stopName))
+                        .append("\",\"stop\":\"").append(escape(stopName))
+                        .append("\",\"distanceKm\":").append(distKm)
+                        .append(",\"ratePerKm\":").append(rate)
+                        .append(",\"amount\":").append(calculatedFee)
                         .append(",\"status\":\"").append(escape(status))
                         .append("\",\"date\":\"").append(payDate != null ? payDate.toString() : "")
                         .append("\",\"cleared\":").append(isPaid || auth)
@@ -2519,15 +3031,24 @@ public class BackendServer {
         Map<String, String> form = formData(readBody(exchange));
         try {
             int studentId = Integer.parseInt(form.get("student_id"));
-            double amount = Double.parseDouble(form.getOrDefault("amount", "12000"));
             String status = form.getOrDefault("status", "Paid");
 
             try (Connection con = DBConnection.getConnection()) {
+                String stopName = "Perundurai Old Bus Stand";
+                try (PreparedStatement psStop = con.prepareStatement("SELECT pickup_stop FROM students WHERE student_id = ?")) {
+                    psStop.setInt(1, studentId);
+                    try (ResultSet rs = psStop.executeQuery()) {
+                        if (rs.next() && rs.getString("pickup_stop") != null) stopName = rs.getString("pickup_stop");
+                    }
+                }
+                double distKm = getStopDistanceKm(con, stopName);
+                double calculatedFee = Math.round(distKm * 2.0 * 100.0) / 100.0;
+
                 String sql = "INSERT INTO fees (student_id, amount, payment_status, payment_date) "
                         + "VALUES (?, ?, ?, CURRENT_DATE) ON DUPLICATE KEY UPDATE payment_status = VALUES(payment_status), amount = VALUES(amount)";
                 try (PreparedStatement ps = con.prepareStatement(sql)) {
                     ps.setInt(1, studentId);
-                    ps.setDouble(2, amount);
+                    ps.setDouble(2, calculatedFee);
                     ps.setString(3, status);
                     ps.executeUpdate();
                 }
@@ -2538,7 +3059,7 @@ public class BackendServer {
                     ps.setInt(2, studentId);
                     ps.executeUpdate();
                 }
-                send(exchange, 200, "{\"message\":\"Fee payment status updated.\"}");
+                send(exchange, 200, "{\"message\":\"Fee payment status updated.\",\"amount\":" + calculatedFee + ",\"status\":\"" + escape(status) + "\"}");
             }
         } catch (Exception e) {
             send(exchange, 400, "{\"error\":\"Failed to update fee: " + escape(e.getMessage()) + "\"}");
@@ -2553,20 +3074,33 @@ public class BackendServer {
             return;
         }
 
-        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        LocalDate targetDate = LocalDate.now().plusDays(1);
+        String query = exchange.getRequestURI().getQuery();
+        if (query != null) {
+            for (String param : query.split("&")) {
+                String[] pair = param.split("=", 2);
+                if (pair.length == 2 && "date".equals(pair[0])) {
+                    try {
+                        targetDate = LocalDate.parse(URLDecoder.decode(pair[1], StandardCharsets.UTF_8));
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
 
         if ("GET".equals(exchange.getRequestMethod())) {
             String sql = "SELECT s.student_id, s.name, s.pickup_stop, s.transport_authorized, "
                     + "COALESCE(b.bus_name, 'Unallocated') AS bus_name, "
-                    + "COALESCE(a.travel_intention, 1) AS bus_required "
+                    + "COALESCE(d.bus_required, COALESCE(a.travel_intention, 1)) AS bus_required "
                     + "FROM students s "
                     + "LEFT JOIN buses b ON s.assigned_bus_id = b.bus_id "
+                    + "LEFT JOIN demands d ON s.student_id = d.student_id AND d.demand_date = ? "
                     + "LEFT JOIN attendance a ON s.student_id = a.student_id AND a.attendance_date = ? "
-                    + "ORDER BY s.student_id ASC";
+                    + "ORDER BY s.pickup_stop ASC, s.student_id ASC";
 
             try (Connection con = DBConnection.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setDate(1, Date.valueOf(tomorrow));
+                ps.setDate(1, Date.valueOf(targetDate));
+                ps.setDate(2, Date.valueOf(targetDate));
                 try (ResultSet rs = ps.executeQuery()) {
                     StringBuilder json = new StringBuilder("[");
                     boolean first = true;
@@ -2574,10 +3108,13 @@ public class BackendServer {
                         if (!first) json.append(',');
                         first = false;
                         json.append("{\"id\":").append(rs.getInt("student_id"))
+                            .append(",\"studentId\":").append(rs.getInt("student_id"))
                             .append(",\"name\":\"").append(escape(rs.getString("name")))
                             .append("\",\"bus\":\"").append(escape(rs.getString("bus_name")))
-                            .append("\",\"stop\":\"").append(escape(rs.getString("pickup_stop")))
+                            .append("\",\"stop\":\"").append(escape(rs.getString("pickup_stop") != null ? rs.getString("pickup_stop") : "Unspecified"))
+                            .append("\",\"pickupStop\":\"").append(escape(rs.getString("pickup_stop") != null ? rs.getString("pickup_stop") : "Unspecified"))
                             .append("\",\"authorized\":").append(rs.getBoolean("transport_authorized"))
+                            .append(",\"busRequired\":").append(rs.getBoolean("bus_required"))
                             .append(",\"required\":").append(rs.getBoolean("bus_required"))
                             .append('}');
                     }
@@ -2594,20 +3131,110 @@ public class BackendServer {
 
         Map<String, String> form = formData(readBody(exchange));
         try {
-            int studentId = Integer.parseInt(form.get("student_id"));
-            boolean required = "yes".equalsIgnoreCase(form.get("required")) || Boolean.parseBoolean(form.get("required"));
+            int studentId = 0;
+            String sidStr = form.get("student_id");
+            if (sidStr == null || sidStr.isBlank()) sidStr = form.get("id");
+            if (sidStr != null && !sidStr.isBlank()) {
+                studentId = Integer.parseInt(sidStr.trim());
+            }
+            if (studentId <= 0) {
+                send(exchange, 400, "{\"error\":\"Valid student ID is required.\"}");
+                return;
+            }
 
-            String sql = "INSERT INTO attendance (student_id, attendance_date, travel_intention, status, boarded) "
-                    + "VALUES (?, ?, ?, 'Pending', 0) "
-                    + "ON DUPLICATE KEY UPDATE travel_intention = VALUES(travel_intention)";
+            boolean required = "yes".equalsIgnoreCase(form.get("required")) || "true".equalsIgnoreCase(form.get("required")) || "1".equals(form.get("required"));
+            if (form.containsKey("date") && form.get("date") != null && !form.get("date").trim().isEmpty()) {
+                try {
+                    targetDate = LocalDate.parse(form.get("date").trim());
+                } catch (Exception ignored) {}
+            }
 
-            try (Connection con = DBConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement(sql)) {
-                ps.setInt(1, studentId);
-                ps.setDate(2, Date.valueOf(tomorrow));
-                ps.setBoolean(3, required);
-                ps.executeUpdate();
-                send(exchange, 200, "{\"message\":\"Tomorrow travel intention saved successfully.\"}");
+            String pickupStop = form.get("pickup_stop");
+            if (pickupStop == null || pickupStop.isBlank()) pickupStop = form.get("stop");
+
+            try (Connection con = DBConnection.getConnection()) {
+                // If bus is required, validate pickup stop
+                if (required) {
+                    if (pickupStop == null || pickupStop.trim().isEmpty()) {
+                        try (PreparedStatement psCheck = con.prepareStatement("SELECT pickup_stop FROM students WHERE student_id = ?")) {
+                            psCheck.setInt(1, studentId);
+                            try (ResultSet rs = psCheck.executeQuery()) {
+                                if (rs.next()) {
+                                    pickupStop = rs.getString("pickup_stop");
+                                }
+                            }
+                        }
+                    }
+                    if (pickupStop == null || pickupStop.trim().isEmpty()) {
+                        send(exchange, 400, "{\"error\":\"Please select a valid pickup stop when bus is required.\"}");
+                        return;
+                    }
+                }
+
+                // If pickup stop provided, update students table
+                if (pickupStop != null && !pickupStop.trim().isEmpty()) {
+                    try (PreparedStatement psStop = con.prepareStatement("UPDATE students SET pickup_stop = ? WHERE student_id = ?")) {
+                        psStop.setString(1, pickupStop.trim());
+                        psStop.setInt(2, studentId);
+                        psStop.executeUpdate();
+                    }
+                }
+
+                // Update or insert into demands table (idempotent)
+                String checkDemandSql = "SELECT demand_id FROM demands WHERE student_id = ? AND demand_date = ?";
+                int existingDemandId = 0;
+                try (PreparedStatement psCd = con.prepareStatement(checkDemandSql)) {
+                    psCd.setInt(1, studentId);
+                    psCd.setDate(2, Date.valueOf(targetDate));
+                    try (ResultSet rs = psCd.executeQuery()) {
+                        if (rs.next()) existingDemandId = rs.getInt("demand_id");
+                    }
+                }
+                if (existingDemandId > 0) {
+                    String updateDemandSql = "UPDATE demands SET bus_required = ?, created_at = CURRENT_TIMESTAMP WHERE demand_id = ?";
+                    try (PreparedStatement psUd = con.prepareStatement(updateDemandSql)) {
+                        psUd.setBoolean(1, required);
+                        psUd.setInt(2, existingDemandId);
+                        psUd.executeUpdate();
+                    }
+                } else {
+                    String insertDemandSql = "INSERT INTO demands (student_id, demand_date, bus_required, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+                    try (PreparedStatement psId = con.prepareStatement(insertDemandSql)) {
+                        psId.setInt(1, studentId);
+                        psId.setDate(2, Date.valueOf(targetDate));
+                        psId.setBoolean(3, required);
+                        psId.executeUpdate();
+                    }
+                }
+
+                // Keep attendance table in sync
+                String checkAttSql = "SELECT attendance_id FROM attendance WHERE student_id = ? AND attendance_date = ?";
+                int existingAttId = 0;
+                try (PreparedStatement psCa = con.prepareStatement(checkAttSql)) {
+                    psCa.setInt(1, studentId);
+                    psCa.setDate(2, Date.valueOf(targetDate));
+                    try (ResultSet rs = psCa.executeQuery()) {
+                        if (rs.next()) existingAttId = rs.getInt("attendance_id");
+                    }
+                }
+                if (existingAttId > 0) {
+                    String updateAttSql = "UPDATE attendance SET travel_intention = ? WHERE attendance_id = ?";
+                    try (PreparedStatement psUa = con.prepareStatement(updateAttSql)) {
+                        psUa.setBoolean(1, required);
+                        psUa.setInt(2, existingAttId);
+                        psUa.executeUpdate();
+                    }
+                } else {
+                    String insertAttSql = "INSERT INTO attendance (student_id, attendance_date, travel_intention, status, boarded) VALUES (?, ?, ?, 'Pending', 0)";
+                    try (PreparedStatement psIa = con.prepareStatement(insertAttSql)) {
+                        psIa.setInt(1, studentId);
+                        psIa.setDate(2, Date.valueOf(targetDate));
+                        psIa.setBoolean(3, required);
+                        psIa.executeUpdate();
+                    }
+                }
+
+                send(exchange, 200, "{\"success\":true,\"message\":\"Requirement Saved Successfully\",\"studentId\":" + studentId + ",\"required\":" + required + ",\"date\":\"" + targetDate.toString() + "\",\"pickupStop\":\"" + escape(pickupStop != null ? pickupStop : "") + "\"}");
             }
         } catch (Exception e) {
             send(exchange, 400, "{\"error\":\"Failed to save intention: " + escape(e.getMessage()) + "\"}");
@@ -2633,39 +3260,79 @@ public class BackendServer {
         LocalDate today = LocalDate.now();
         LocalDate tomorrow = today.plusDays(1);
 
-        String sql = "SELECT s.student_id, s.name, s.pickup_stop, s.transport_authorized, "
+        String busSql = "SELECT bus_id, bus_name, bus_number, capacity FROM buses WHERE bus_id = ?";
+        String studentSql = "SELECT s.student_id, s.roll_number, s.name, s.pickup_stop, s.transport_authorized, "
                 + "COALESCE(a.boarded, 0) AS boarded, "
-                + "COALESCE(d.travel_intention, 1) AS declared_tomorrow "
+                + "COALESCE(dm.bus_required, COALESCE(d.travel_intention, 1)) AS declared_tomorrow "
                 + "FROM students s "
                 + "LEFT JOIN attendance a ON s.student_id = a.student_id AND a.attendance_date = ? "
                 + "LEFT JOIN attendance d ON s.student_id = d.student_id AND d.attendance_date = ? "
+                + "LEFT JOIN demands dm ON s.student_id = dm.student_id AND dm.demand_date = ? "
                 + "WHERE s.assigned_bus_id = ? "
                 + "ORDER BY s.student_id ASC";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setDate(1, Date.valueOf(today));
-            ps.setDate(2, Date.valueOf(tomorrow));
-            ps.setInt(3, busId);
+        try (Connection con = DBConnection.getConnection()) {
+            String busName = "Bus " + busId;
+            String busNumber = "TN-33-CB-10" + busId;
+            int capacity = 20;
 
-            try (ResultSet rs = ps.executeQuery()) {
-                StringBuilder json = new StringBuilder("[");
-                boolean first = true;
-                int seatNo = 1;
-                while (rs.next()) {
-                    if (!first) json.append(',');
-                    first = false;
-                    json.append("{\"seatNo\":\"").append(String.format("%02d", seatNo++))
-                        .append("\",\"id\":").append(rs.getInt("student_id"))
-                        .append(",\"name\":\"").append(escape(rs.getString("name")))
-                        .append("\",\"stop\":\"").append(escape(rs.getString("pickup_stop")))
-                        .append("\",\"authorized\":").append(rs.getBoolean("transport_authorized"))
-                        .append(",\"boarded\":").append(rs.getBoolean("boarded"))
-                        .append(",\"declaredTomorrow\":").append(rs.getBoolean("declared_tomorrow"))
-                        .append('}');
+            try (PreparedStatement psBus = con.prepareStatement(busSql)) {
+                psBus.setInt(1, busId);
+                try (ResultSet rsBus = psBus.executeQuery()) {
+                    if (rsBus.next()) {
+                        String bName = rsBus.getString("bus_name");
+                        if (bName != null && !bName.isBlank()) busName = bName;
+                        String bNum = rsBus.getString("bus_number");
+                        if (bNum != null && !bNum.isBlank()) busNumber = bNum;
+                        int cap = rsBus.getInt("capacity");
+                        if (cap > 0) capacity = cap;
+                    }
                 }
-                json.append(']');
-                send(exchange, 200, json.toString());
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(studentSql)) {
+                ps.setDate(1, Date.valueOf(today));
+                ps.setDate(2, Date.valueOf(tomorrow));
+                ps.setDate(3, Date.valueOf(tomorrow));
+                ps.setInt(4, busId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    StringBuilder studentArray = new StringBuilder("[");
+                    boolean first = true;
+                    int seatNo = 1;
+                    int totalAllocated = 0;
+                    int totalBoarded = 0;
+                    while (rs.next()) {
+                        totalAllocated++;
+                        boolean isBoarded = rs.getBoolean("boarded");
+                        if (isBoarded) totalBoarded++;
+
+                        if (!first) studentArray.append(',');
+                        first = false;
+                        studentArray.append("{\"seatNo\":\"").append(String.format("%02d", seatNo++))
+                            .append("\",\"id\":").append(rs.getInt("student_id"))
+                            .append(",\"rollNumber\":\"").append(escape(rs.getString("roll_number") != null ? rs.getString("roll_number") : ""))
+                            .append("\",\"name\":\"").append(escape(rs.getString("name")))
+                            .append("\",\"stop\":\"").append(escape(rs.getString("pickup_stop")))
+                            .append("\",\"authorized\":").append(rs.getBoolean("transport_authorized"))
+                            .append(",\"boarded\":").append(isBoarded)
+                            .append(",\"declaredTomorrow\":").append(rs.getBoolean("declared_tomorrow"))
+                            .append('}');
+                    }
+                    studentArray.append(']');
+                    int seatsVacant = Math.max(0, capacity - totalAllocated);
+
+                    String json = "{\"busId\":" + busId
+                        + ",\"busName\":\"" + escape(busName) + "\""
+                        + ",\"busNumber\":\"" + escape(busNumber) + "\""
+                        + ",\"capacity\":" + capacity
+                        + ",\"totalAllocated\":" + totalAllocated
+                        + ",\"seatsVacant\":" + seatsVacant
+                        + ",\"totalBoarded\":" + totalBoarded
+                        + ",\"students\":" + studentArray.toString()
+                        + "}";
+                    send(exchange, 200, json);
+                }
             }
         } catch (SQLException e) {
             send(exchange, 500, "{\"error\":\"Database error: " + escape(e.getMessage()) + "\"}");
@@ -2681,29 +3348,158 @@ public class BackendServer {
              Statement st = con.createStatement()) {
 
             int totalStudents = 0;
-            int totalBuses = 0;
-            int activeBreakdowns = 0;
+            int allocatedStudents = 0;
+            int unallocatedStudents = 0;
+            int regularBuses = 0;
+            int totalRegularSeats = 0;
+            int operatingNormally = 0;
+            int breakdownBuses = 0;
+            int breakdownIncidents = 0;
+            int tomorrowDemand = 0;
+            int activeGrievances = 0;
+            int resolvedGrievances = 0;
             double feesPaid = 0;
 
-            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM students")) {
-                if (rs.next()) totalStudents = rs.getInt(1);
-            }
-            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM buses WHERE status = 'Active'")) {
-                if (rs.next()) totalBuses = rs.getInt(1);
-            }
-            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM breakdowns WHERE status = 'Active'")) {
-                if (rs.next()) activeBreakdowns = rs.getInt(1);
-            }
-            try (ResultSet rs = st.executeQuery("SELECT COALESCE(SUM(amount), 0) FROM fees WHERE payment_status = 'Paid'")) {
-                if (rs.next()) feesPaid = rs.getDouble(1);
+            // 1. Students: Total, Allocated, Unallocated
+            try (ResultSet rs = st.executeQuery("SELECT "
+                    + "COUNT(*) AS total, "
+                    + "SUM(CASE WHEN assigned_bus_id IS NOT NULL AND assigned_bus_id > 0 THEN 1 ELSE 0 END) AS allocated, "
+                    + "SUM(CASE WHEN assigned_bus_id IS NULL OR assigned_bus_id = 0 THEN 1 ELSE 0 END) AS unallocated "
+                    + "FROM students")) {
+                if (rs.next()) {
+                    totalStudents = rs.getInt("total");
+                    allocatedStudents = rs.getInt("allocated");
+                    unallocatedStudents = rs.getInt("unallocated");
+                }
             }
 
-            String json = "{\"totalStudents\":" + totalStudents
-                    + ",\"activeBuses\":" + totalBuses
-                    + ",\"breakdownBuses\":" + activeBreakdowns
-                    + ",\"feesPaid\":" + feesPaid + "}";
-            send(exchange, 200, json);
+            // 2. Regular Fleet Buses & Total Regular Seats (excluding Emergency Standby)
+            try (ResultSet rs = st.executeQuery("SELECT "
+                    + "COUNT(*) AS reg_buses, "
+                    + "COALESCE(SUM(capacity), 0) AS total_seats "
+                    + "FROM buses "
+                    + "WHERE (bus_type != 'Emergency Standby' OR bus_type IS NULL)")) {
+                if (rs.next()) {
+                    regularBuses = rs.getInt("reg_buses");
+                    totalRegularSeats = rs.getInt("total_seats");
+                }
+            }
+
+            // 3. Breakdown Stats (Active Breakdown Incidents & Distinct Broken Regular Buses)
+            try (ResultSet rs = st.executeQuery("SELECT "
+                    + "COUNT(*) AS total_incidents, "
+                    + "COUNT(DISTINCT broken_bus_id) AS broken_buses "
+                    + "FROM breakdowns WHERE status = 'Active'")) {
+                if (rs.next()) {
+                    breakdownIncidents = rs.getInt("total_incidents");
+                    breakdownBuses = rs.getInt("broken_buses");
+                }
+            }
+
+            // 4. Operating Normally: Regular buses with status = 'Active' that are not currently broken
+            try (ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM buses "
+                    + "WHERE (bus_type != 'Emergency Standby' OR bus_type IS NULL) "
+                    + "AND status = 'Active' "
+                    + "AND bus_id NOT IN (SELECT broken_bus_id FROM breakdowns WHERE status = 'Active')")) {
+                if (rs.next()) {
+                    operatingNormally = rs.getInt(1);
+                }
+            }
+
+            // 5. Riders Expected Tomorrow
+            LocalDate tomorrow = LocalDate.now().plusDays(1);
+            String tomorrowStr = tomorrow.toString();
+            try (PreparedStatement ps = con.prepareStatement(
+                    "SELECT ("
+                    + "  SELECT COUNT(DISTINCT student_id) FROM attendance WHERE attendance_date = ? AND travel_intention = 1"
+                    + ") + ("
+                    + "  SELECT COUNT(DISTINCT student_id) FROM demands WHERE demand_date = ? AND bus_required = 1 "
+                    + "  AND student_id NOT IN (SELECT student_id FROM attendance WHERE attendance_date = ?)"
+                    + ") AS total_demand")) {
+                ps.setString(1, tomorrowStr);
+                ps.setString(2, tomorrowStr);
+                ps.setString(3, tomorrowStr);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        tomorrowDemand = rs.getInt("total_demand");
+                    }
+                }
+            } catch (SQLException ignored) {
+                // Fallback to attendance table only
+                try (PreparedStatement ps = con.prepareStatement(
+                        "SELECT COUNT(DISTINCT student_id) FROM attendance WHERE attendance_date = ? AND travel_intention = 1")) {
+                    ps.setString(1, tomorrowStr);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) tomorrowDemand = rs.getInt(1);
+                    }
+                }
+            }
+
+            // 6. Grievances (Active vs Resolved)
+            try (ResultSet rs = st.executeQuery("SELECT "
+                    + "SUM(CASE WHEN status IN ('Open', 'Pending') THEN 1 ELSE 0 END) AS active_cnt, "
+                    + "SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) AS resolved_cnt "
+                    + "FROM complaints")) {
+                if (rs.next()) {
+                    activeGrievances = rs.getInt("active_cnt");
+                    resolvedGrievances = rs.getInt("resolved_cnt");
+                }
+            }
+
+            // 7. Fees Paid
+            try (ResultSet rs = st.executeQuery("SELECT COALESCE(SUM(amount), 0) FROM fees WHERE payment_status = 'Paid'")) {
+                if (rs.next()) {
+                    feesPaid = rs.getDouble(1);
+                }
+            }
+
+            // 8. Bus Seating Allocations Array
+            StringBuilder allocJson = new StringBuilder("[");
+            String allocSql = "SELECT b.bus_id, b.bus_name, COALESCE(b.route_name, 'Regular Corridor') AS route_name, "
+                    + "b.capacity, COALESCE(b.status, 'Active') AS status, "
+                    + "COUNT(s.student_id) AS allocated_count "
+                    + "FROM buses b "
+                    + "LEFT JOIN students s ON s.assigned_bus_id = b.bus_id "
+                    + "WHERE (b.bus_type != 'Emergency Standby' OR b.bus_type IS NULL) "
+                    + "GROUP BY b.bus_id, b.bus_name, b.route_name, b.capacity, b.status "
+                    + "ORDER BY b.bus_id ASC";
+            try (ResultSet rs = st.executeQuery(allocSql)) {
+                boolean first = true;
+                while (rs.next()) {
+                    if (!first) allocJson.append(',');
+                    first = false;
+                    allocJson.append("{\"id\":").append(rs.getInt("bus_id"))
+                        .append(",\"name\":\"").append(escape(rs.getString("bus_name"))).append("\"")
+                        .append(",\"route\":\"").append(escape(rs.getString("route_name"))).append("\"")
+                        .append(",\"capacity\":").append(rs.getInt("capacity"))
+                        .append(",\"allocated\":").append(rs.getInt("allocated_count"))
+                        .append(",\"status\":\"").append(escape(rs.getString("status"))).append("\"")
+                        .append('}');
+                }
+            }
+            allocJson.append(']');
+
+            StringBuilder json = new StringBuilder("{");
+            json.append("\"totalStudents\":").append(totalStudents)
+                .append(",\"allocatedStudents\":").append(allocatedStudents)
+                .append(",\"unallocatedStudents\":").append(unallocatedStudents)
+                .append(",\"regularBuses\":").append(regularBuses)
+                .append(",\"totalRegularSeats\":").append(totalRegularSeats)
+                .append(",\"operatingNormally\":").append(operatingNormally)
+                .append(",\"breakdownBuses\":").append(breakdownBuses)
+                .append(",\"breakdownIncidents\":").append(breakdownIncidents)
+                .append(",\"tomorrowDemand\":").append(tomorrowDemand)
+                .append(",\"activeGrievances\":").append(activeGrievances)
+                .append(",\"resolvedGrievances\":").append(resolvedGrievances)
+                .append(",\"feesPaid\":").append(feesPaid)
+                .append(",\"activeBuses\":").append(regularBuses)
+                .append(",\"allocations\":").append(allocJson)
+                .append('}');
+
+            send(exchange, 200, json.toString());
         } catch (SQLException e) {
+            System.err.println("[BackendServer] dashboardApi database error: " + e.getMessage());
+            e.printStackTrace();
             send(exchange, 500, "{\"error\":\"Database error: " + escape(e.getMessage()) + "\"}");
         }
     }
@@ -2962,6 +3758,10 @@ public class BackendServer {
         exchange.getResponseHeaders().set("Content-Type", mimeType);
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Cache-Control", "no-cache, no-store, must-revalidate");
+        if ("HEAD".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.sendResponseHeaders(200, -1);
+            return;
+        }
         exchange.sendResponseHeaders(200, fileBytes.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(fileBytes);

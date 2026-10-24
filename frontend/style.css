@@ -529,7 +529,6 @@ body:has(#view-requirements:target) .sidebar-nav a[href="#view-requirements"] { 
 body:has(#view-routes:target) .sidebar-nav a[href="#view-routes"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
 body:has(#view-breakdowns:target) .sidebar-nav a[href="#view-breakdowns"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
 body:has(#view-fees:target) .sidebar-nav a[href="#view-fees"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
-body:has(#view-eligibility:target) .sidebar-nav a[href="#view-eligibility"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
 body:has(#view-complaints:target) .sidebar-nav a[href="#view-complaints"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
 body:has(#view-driver-1:target) .sidebar-nav a[href="#view-driver-1"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
 body:has(#view-driver-2:target) .sidebar-nav a[href="#view-driver-2"] { color: var(--white); background: linear-gradient(90deg, var(--navy-700) 0%, rgba(30, 76, 130, 0.8) 100%); font-weight: 600; }
@@ -636,7 +635,6 @@ body:has(#view-requirements:target) .role-switcher-links a[href="#view-admin-das
 body:has(#view-routes:target) .role-switcher-links a[href="#view-admin-dashboard"],
 body:has(#view-breakdowns:target) .role-switcher-links a[href="#view-admin-dashboard"],
 body:has(#view-fees:target) .role-switcher-links a[href="#view-admin-dashboard"],
-body:has(#view-eligibility:target) .role-switcher-links a[href="#view-admin-dashboard"],
 body:has(#view-complaints:target) .role-switcher-links a[href="#view-admin-dashboard"] {
   background-color: var(--navy-900);
   color: var(--white);
@@ -774,7 +772,6 @@ body:has(#view-requirements:target) #view-admin-dashboard,
 body:has(#view-routes:target) #view-admin-dashboard,
 body:has(#view-breakdowns:target) #view-admin-dashboard,
 body:has(#view-fees:target) #view-admin-dashboard,
-body:has(#view-eligibility:target) #view-admin-dashboard,
 body:has(#view-complaints:target) #view-admin-dashboard,
 body:has(#view-student-portal:target) #view-admin-dashboard,
 body:has(#view-student-dashboard:target) #view-admin-dashboard,
@@ -810,7 +807,6 @@ body:has(#modal-breakdown-wizard:target) #view-breakdowns {
 #view-routes:target,
 #view-breakdowns:target,
 #view-fees:target,
-#view-eligibility:target,
 #view-complaints:target,
 #view-student-portal:target,
 #view-student-dashboard:target,
@@ -839,7 +835,6 @@ body.role-student #view-requirements,
 body.role-student #view-routes,
 body.role-student #view-breakdowns,
 body.role-student #view-fees,
-body.role-student #view-eligibility,
 body.role-student #view-complaints,
 body.role-student #view-driver-1,
 body.role-student #view-driver-2,
@@ -1512,24 +1507,6 @@ body:not(.role-student) #sidebarStudentNav {
   color: var(--slate-700);
 }
 
-.java-rule-box {
-  background-color: var(--navy-950);
-  color: #38bdf8;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  font-size: 0.90rem;
-  overflow-x: auto;
-}
-
-.rule-bullets {
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.86rem;
-  color: var(--slate-700);
-}
-
 .grid-2-col {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -2018,3 +1995,172 @@ body:not(.role-student) #sidebarStudentNav {
   0% { transform: scale(0.6); opacity: 0.9; }
   100% { transform: scale(1.6); opacity: 0; }
 }
+
+/* ==========================================================================
+   11. DRIVER WEBCAM BARCODE SCANNER & ATTENDANCE VERIFICATION STYLES
+   ========================================================================== */
+.barcode-scanner-panel {
+  border: 1px solid var(--border-color, #e2e8f0);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06);
+}
+
+.scanner-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
+}
+
+.scanner-viewport-container {
+  width: 100%;
+}
+
+.scanner-viewport {
+  position: relative;
+  width: 100%;
+  height: 290px;
+  background: #0f172a;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.scanner-reticle {
+  position: relative;
+  width: 78%;
+  max-width: 340px;
+  height: 130px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
+}
+
+.reticle-corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: #38bdf8;
+}
+
+.reticle-corner.top-left {
+  top: -2px;
+  left: -2px;
+  border-top: 3px solid #38bdf8;
+  border-left: 3px solid #38bdf8;
+  border-top-left-radius: 6px;
+}
+
+.reticle-corner.top-right {
+  top: -2px;
+  right: -2px;
+  border-top: 3px solid #38bdf8;
+  border-right: 3px solid #38bdf8;
+  border-top-right-radius: 6px;
+}
+
+.reticle-corner.bottom-left {
+  bottom: -2px;
+  left: -2px;
+  border-bottom: 3px solid #38bdf8;
+  border-left: 3px solid #38bdf8;
+  border-bottom-left-radius: 6px;
+}
+
+.reticle-corner.bottom-right {
+  bottom: -2px;
+  right: -2px;
+  border-bottom: 3px solid #38bdf8;
+  border-right: 3px solid #38bdf8;
+  border-bottom-right-radius: 6px;
+}
+
+.scanner-laser {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0) 0%, rgba(239, 68, 68, 1) 50%, rgba(239, 68, 68, 0) 100%);
+  box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.8), 0 0 4px rgba(255, 255, 255, 0.9);
+  animation: scanLaserLine 2s infinite ease-in-out;
+}
+
+@keyframes scanLaserLine {
+  0% { top: 6%; opacity: 0.6; }
+  50% { top: 92%; opacity: 1; }
+  100% { top: 6%; opacity: 0.6; }
+}
+
+.scanner-guidance-pill {
+  margin-top: 14px;
+  background: rgba(15, 23, 42, 0.82);
+  backdrop-filter: blur(6px);
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.scanner-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: #94a3b8;
+  z-index: 5;
+}
+
+.placeholder-icon {
+  font-size: 42px;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.student-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #1d4ed8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  border: 1px solid #bfdbfe;
+}
+

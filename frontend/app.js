@@ -294,8 +294,14 @@ async function loadAttendance(date) {
 
       attSelect.appendChild(optPresent);
       attSelect.appendChild(optAbsent);
-      attSelect.addEventListener("change", () => {
+      attSelect.addEventListener("change", async () => {
         attSelect.style.color = attSelect.value === "Absent" ? "#dc2626" : "#059669";
+        try {
+          const currentDate = dateInput && dateInput.value ? dateInput.value : selectedDate;
+          await saveAttendance(student.id, currentDate, attSelect.value, boardSelect.value === "true");
+        } catch (err) {
+          console.warn("Auto-save attendance status error:", err);
+        }
       });
       attCell.appendChild(attSelect);
       row.appendChild(attCell);
@@ -324,53 +330,17 @@ async function loadAttendance(date) {
 
       boardSelect.appendChild(optBoarded);
       boardSelect.appendChild(optPending);
-      boardSelect.addEventListener("change", () => {
+      boardSelect.addEventListener("change", async () => {
         boardSelect.style.color = boardSelect.value === "true" ? "#059669" : "#d97706";
+        try {
+          const currentDate = dateInput && dateInput.value ? dateInput.value : selectedDate;
+          await saveAttendance(student.id, currentDate, attSelect.value, boardSelect.value === "true");
+        } catch (err) {
+          console.warn("Auto-save boarding status error:", err);
+        }
       });
       boardCell.appendChild(boardSelect);
       row.appendChild(boardCell);
-
-      // 7. Action: Save to MySQL Button
-      const actionCell = document.createElement("td");
-      const saveBtn = document.createElement("button");
-      saveBtn.type = "button";
-      saveBtn.className = "btn-table-action";
-      saveBtn.textContent = "Save";
-      saveBtn.style.cursor = "pointer";
-
-      saveBtn.addEventListener("click", async () => {
-        saveBtn.disabled = true;
-        saveBtn.textContent = "Saving...";
-        try {
-          const newStatus = attSelect.value;
-          const newBoarded = boardSelect.value === "true";
-          const currentDate = dateInput && dateInput.value ? dateInput.value : selectedDate;
-
-          await saveAttendance(student.id, currentDate, newStatus, newBoarded);
-          saveBtn.textContent = "Saved ✓";
-          saveBtn.style.backgroundColor = "#dcfce7";
-          saveBtn.style.color = "#15803d";
-          setTimeout(() => {
-            saveBtn.textContent = "Save";
-            saveBtn.style.backgroundColor = "";
-            saveBtn.style.color = "";
-            saveBtn.disabled = false;
-          }, 1800);
-        } catch (err) {
-          saveBtn.textContent = "Failed";
-          saveBtn.style.backgroundColor = "#fee2e2";
-          saveBtn.style.color = "#b91c1c";
-          setTimeout(() => {
-            saveBtn.textContent = "Save";
-            saveBtn.style.backgroundColor = "";
-            saveBtn.style.color = "";
-            saveBtn.disabled = false;
-          }, 2000);
-        }
-      });
-
-      actionCell.appendChild(saveBtn);
-      row.appendChild(actionCell);
 
       tbody.appendChild(row);
     });
@@ -630,28 +600,32 @@ async function loadFees() {
       return;
     }
 
-    // Calculate metrics
+    // Calculate metrics based on actual distance-based fees
     let paidCount = 0;
+    let paidTotal = 0;
+    let pendingTotal = 0;
     fees.forEach(f => {
+      const amt = Number(f.amount || 0);
       if (f.status && f.status.toLowerCase() === "paid") {
         paidCount++;
+        paidTotal += amt;
+      } else {
+        pendingTotal += amt;
       }
     });
     const totalCount = fees.length;
     const unpaidCount = totalCount - paidCount;
-    const paidTotal = paidCount * 12000;
-    const pendingTotal = unpaidCount * 12000;
 
     // Update top metric cards
     const elPaidCount = document.querySelector("#fee-metric-paid-count");
     if (elPaidCount) elPaidCount.textContent = `${paidCount} / ${totalCount}`;
     const elPaidTotal = document.querySelector("#fee-metric-paid-total");
-    if (elPaidTotal) elPaidTotal.textContent = `₹${paidTotal.toLocaleString('en-IN')} Collected`;
+    if (elPaidTotal) elPaidTotal.textContent = `₹${paidTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Collected`;
 
     const elPendingCount = document.querySelector("#fee-metric-pending-count");
     if (elPendingCount) elPendingCount.textContent = `${unpaidCount} / ${totalCount}`;
     const elPendingTotal = document.querySelector("#fee-metric-pending-total");
-    if (elPendingTotal) elPendingTotal.textContent = `₹${pendingTotal.toLocaleString('en-IN')} Pending`;
+    if (elPendingTotal) elPendingTotal.textContent = `₹${pendingTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Pending`;
 
     tbody.replaceChildren();
 
@@ -679,9 +653,26 @@ async function loadFees() {
       busTd.appendChild(busBadge);
       row.appendChild(busTd);
 
-      // 4. Fee Amount
+      // 4. Pickup Stop
+      const stopTd = document.createElement("td");
+      stopTd.textContent = rec.pickupStop || "Not set";
+      row.appendChild(stopTd);
+
+      // 5. Distance (km)
+      const distTd = document.createElement("td");
+      const distKm = rec.distanceKm !== undefined ? rec.distanceKm : 0;
+      distTd.textContent = `${distKm} km`;
+      row.appendChild(distTd);
+
+      // 6. Rate (₹/km)
+      const rateTd = document.createElement("td");
+      rateTd.textContent = "₹2.00 / km";
+      row.appendChild(rateTd);
+
+      // 7. Calculated Fee Amount (Distance * ₹2/km)
       const amtTd = document.createElement("td");
-      amtTd.textContent = "₹" + Number(rec.amount || 12000).toLocaleString('en-IN');
+      const feeVal = Number(rec.amount || 0);
+      amtTd.innerHTML = `<strong>₹${feeVal.toFixed(2)}</strong>`;
       row.appendChild(amtTd);
 
       // 5. Payment Status Selector (Paid / Unpaid)
@@ -854,111 +845,122 @@ async function loadRequirements(selectedDate) {
 
       if (list.length === 0) {
         const row = document.createElement("tr");
-        row.innerHTML = `<td colspan="6" style="text-align:center;color:var(--slate-500);padding:24px;">No students registered in the system yet.</td>`;
+        row.innerHTML = `<td colspan="5" style="text-align:center;color:var(--slate-500);padding:24px;">No students registered in the system yet.</td>`;
         tbody.appendChild(row);
-        return;
+      } else {
+        list.forEach(item => {
+          const row = document.createElement("tr");
+
+          // 1. Student ID
+          const idTd = document.createElement("td");
+          idTd.textContent = "#" + item.id;
+          row.appendChild(idTd);
+
+          // 2. Name
+          const nameTd = document.createElement("td");
+          nameTd.textContent = item.name;
+          row.appendChild(nameTd);
+
+          // 3. Assigned Bus
+          const busTd = document.createElement("td");
+          busTd.textContent = item.bus || "Unallocated";
+          row.appendChild(busTd);
+
+          // 4. Pickup Stop
+          const stopTd = document.createElement("td");
+          stopTd.textContent = item.stop || "Not Specified";
+          row.appendChild(stopTd);
+
+          // 5. Bus Required Tomorrow Status / Selector (Auto-saves on change)
+          const statusTd = document.createElement("td");
+          const selectStatus = document.createElement("select");
+          selectStatus.className = "form-select";
+          selectStatus.style.padding = "4px 8px";
+          selectStatus.style.fontSize = "13px";
+          selectStatus.style.width = "auto";
+          selectStatus.style.borderRadius = "6px";
+
+          const optYes = document.createElement("option");
+          optYes.value = "true";
+          optYes.textContent = "Yes (Required)";
+          if (item.busRequired) optYes.selected = true;
+
+          const optNo = document.createElement("option");
+          optNo.value = "false";
+          optNo.textContent = "No (Self Commute)";
+          if (!item.busRequired) optNo.selected = true;
+
+          selectStatus.appendChild(optYes);
+          selectStatus.appendChild(optNo);
+
+          const badge = document.createElement("span");
+          badge.className = item.busRequired ? "badge badge-success ml-2" : "badge badge-neutral ml-2";
+          badge.textContent = item.busRequired ? "Required" : "Self Commute";
+
+          selectStatus.addEventListener("change", async () => {
+            const isReq = selectStatus.value === "true";
+            badge.className = isReq ? "badge badge-success ml-2" : "badge badge-neutral ml-2";
+            badge.textContent = isReq ? "Required" : "Self Commute";
+            try {
+              await saveRequirement(item.id, dateStr, isReq);
+            } catch (err) {
+              console.warn("Auto-save demand failed:", err);
+            }
+          });
+
+          statusTd.appendChild(selectStatus);
+          statusTd.appendChild(badge);
+          row.appendChild(statusTd);
+
+          tbody.appendChild(row);
+        });
       }
 
-      list.forEach(item => {
-        const row = document.createElement("tr");
-
-        // 1. Student ID
-        const idTd = document.createElement("td");
-        idTd.textContent = `#${item.id}`;
-        row.appendChild(idTd);
-
-        // 2. Name
-        const nameTd = document.createElement("td");
-        nameTd.textContent = item.name;
-        row.appendChild(nameTd);
-
-        // 3. Assigned Bus
-        const busTd = document.createElement("td");
-        busTd.textContent = item.bus || "Unallocated";
-        row.appendChild(busTd);
-
-        // 4. Pickup Stop
-        const stopTd = document.createElement("td");
-        stopTd.textContent = item.stop || "Not Specified";
-        row.appendChild(stopTd);
-
-        // 5. Bus Required Tomorrow Status / Selector
-        const statusTd = document.createElement("td");
-        const selectStatus = document.createElement("select");
-        selectStatus.className = "form-select";
-        selectStatus.style.padding = "4px 8px";
-        selectStatus.style.fontSize = "13px";
-        selectStatus.style.width = "auto";
-        selectStatus.style.borderRadius = "6px";
-
-        const optYes = document.createElement("option");
-        optYes.value = "true";
-        optYes.textContent = "Yes (Required)";
-        if (item.busRequired) optYes.selected = true;
-
-        const optNo = document.createElement("option");
-        optNo.value = "false";
-        optNo.textContent = "No (Self Commute)";
-        if (!item.busRequired) optNo.selected = true;
-
-        selectStatus.appendChild(optYes);
-        selectStatus.appendChild(optNo);
-
-        const badge = document.createElement("span");
-        badge.className = item.busRequired ? "badge badge-success ml-2" : "badge badge-neutral ml-2";
-        badge.textContent = item.busRequired ? "Required" : "Self Commute";
-
-        selectStatus.addEventListener("change", () => {
-          const isReq = selectStatus.value === "true";
-          badge.className = isReq ? "badge badge-success ml-2" : "badge badge-neutral ml-2";
-          badge.textContent = isReq ? "Required" : "Self Commute";
+      // Group saved requirements by pickup stop and render stop summary
+      const summaryContainer = document.querySelector("#requirements-stop-summary");
+      if (summaryContainer) {
+        summaryContainer.replaceChildren();
+        const stopGroups = {};
+        list.filter(item => item.busRequired).forEach(item => {
+          const stop = item.stop || "Unassigned Stop";
+          if (!stopGroups[stop]) stopGroups[stop] = [];
+          stopGroups[stop].push(item);
         });
 
-        statusTd.appendChild(selectStatus);
-        statusTd.appendChild(badge);
-        row.appendChild(statusTd);
+        const card = document.createElement("div");
+        card.className = "content-card mb-6";
+        const groupKeys = Object.keys(stopGroups);
+        let groupsHtml = "";
+        if (groupKeys.length === 0) {
+          groupsHtml = '<p class="text-sm text-muted p-4">No students have declared a bus requirement for this date yet.</p>';
+        } else {
+          groupsHtml = '<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; padding: 16px;">';
+          groupKeys.forEach(stopName => {
+            const riders = stopGroups[stopName];
+            groupsHtml += `
+              <div style="background:var(--slate-50, #f8fafc); border:1px solid var(--slate-200, #e2e8f0); border-radius:8px; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <strong style="font-size:14px; color:var(--slate-800, #1e293b);">${stopName}</strong>
+                  <span class="badge badge-primary">${riders.length} Rider${riders.length > 1 ? 's' : ''}</span>
+                </div>
+                <div style="font-size:12px; color:var(--slate-600, #475569); line-height:1.5;">
+                  ${riders.map(r => `• #${r.id} ${r.name} (${r.bus || 'Unallocated'})`).join('<br>')}
+                </div>
+              </div>
+            `;
+          });
+          groupsHtml += '</div>';
+        }
 
-        // 6. Action: Save button
-        const actionTd = document.createElement("td");
-        const saveBtn = document.createElement("button");
-        saveBtn.type = "button";
-        saveBtn.className = "btn-table-action";
-        saveBtn.textContent = "Save";
-        saveBtn.style.cursor = "pointer";
-
-        saveBtn.addEventListener("click", async () => {
-          saveBtn.disabled = true;
-          saveBtn.textContent = "Saving...";
-          try {
-            const reqVal = selectStatus.value === "true";
-            await saveRequirement(item.id, dateStr, reqVal);
-            saveBtn.textContent = "Saved ✓";
-            saveBtn.style.backgroundColor = "#dcfce7";
-            saveBtn.style.color = "#15803d";
-            setTimeout(() => {
-              saveBtn.textContent = "Save";
-              saveBtn.style.backgroundColor = "";
-              saveBtn.style.color = "";
-              saveBtn.disabled = false;
-            }, 1800);
-          } catch (err) {
-            saveBtn.textContent = "Failed";
-            saveBtn.style.backgroundColor = "#fee2e2";
-            saveBtn.style.color = "#b91c1c";
-            setTimeout(() => {
-              saveBtn.textContent = "Save";
-              saveBtn.style.backgroundColor = "";
-              saveBtn.style.color = "";
-              saveBtn.disabled = false;
-            }, 2000);
-          }
-        });
-
-        actionTd.appendChild(saveBtn);
-        row.appendChild(actionTd);
-
-        tbody.appendChild(row);
-      });
+        card.innerHTML = `
+          <div class="card-header">
+            <h3 class="card-title">Tomorrow's Demand Grouped by Pickup Stop</h3>
+            <p class="card-subtitle">Real-time student boarding aggregation for route planning</p>
+          </div>
+          ${groupsHtml}
+        `;
+        summaryContainer.appendChild(card);
+      }
     }
 
     console.log("Tomorrow demand requirements loaded from database:", list.length);
@@ -968,12 +970,17 @@ async function loadRequirements(selectedDate) {
   }
 }
 
-async function saveRequirement(studentId, dateStr, busRequired) {
-  const body = new URLSearchParams({
-    id: studentId,
+async function saveRequirement(studentId, dateStr, busRequired, pickupStop) {
+  const params = {
+    id: String(studentId),
+    student_id: String(studentId),
     date: dateStr,
     required: busRequired ? "true" : "false"
-  });
+  };
+  if (pickupStop) {
+    params.pickup_stop = pickupStop;
+  }
+  const body = new URLSearchParams(params);
 
   try {
     const data = await apiRequest("/requirements", {
@@ -998,6 +1005,24 @@ function initRequirementsModule() {
     });
   }
 
+  // Hook up radio button toggling for pickup stop visibility
+  const radios = document.querySelectorAll('input[name="tomorrowReq"]');
+  radios.forEach(r => {
+    r.addEventListener("change", () => {
+      const stopGroup = document.querySelector("#student-intention-stop-group");
+      const stopSelect = document.querySelector("#student-intention-pickup-stop");
+      if (stopGroup && stopSelect) {
+        if (r.value === "yes" && r.checked) {
+          stopGroup.style.display = "block";
+          stopSelect.required = true;
+        } else if (r.value === "no" && r.checked) {
+          stopGroup.style.display = "none";
+          stopSelect.required = false;
+        }
+      }
+    });
+  });
+
   // Hook up student portal intention declaration form
   const studentForm = document.querySelector("#form-student-intention");
   if (studentForm) {
@@ -1007,6 +1032,23 @@ function initRequirementsModule() {
       const selectedRadio = studentForm.querySelector('input[name="tomorrowReq"]:checked');
       const isReq = selectedRadio ? selectedRadio.value === "yes" : true;
       const tomorrowStr = getTomorrowDateString();
+      const stopSelect = document.querySelector("#student-intention-pickup-stop");
+      const pickupStop = stopSelect ? stopSelect.value.trim() : "";
+
+      const banner = document.querySelector("#banner-student-intention");
+      const statusText = document.querySelector("#status-student-intention-text");
+      const descText = document.querySelector("#desc-student-intention-text");
+
+      // Validate pickup stop when bus is required
+      if (isReq && !pickupStop) {
+        if (banner) {
+          banner.className = "alert-banner alert-warning mt-4";
+          banner.style.display = "block";
+        }
+        if (statusText) statusText.textContent = "Pickup Stop Required";
+        if (descText) descText.textContent = "Please select your pickup stop to reserve a seat.";
+        return;
+      }
 
       // Find the active student ID
       let activeStudentId = parseInt(sessionStorage.getItem("activeStudentId"), 10) || 105;
@@ -1017,32 +1059,40 @@ function initRequirementsModule() {
       }
 
       try {
-        await saveRequirement(activeStudentId, tomorrowStr, isReq);
-
-        const banner = document.querySelector("#banner-student-intention");
-        const statusText = document.querySelector("#status-student-intention-text");
-        const descText = document.querySelector("#desc-student-intention-text");
+        await saveRequirement(activeStudentId, tomorrowStr, isReq, pickupStop);
 
         if (statusText) {
-          statusText.textContent = isReq ? "Current Status: Required (Yes)" : "Current Status: Self-Commuting (No)";
+          statusText.textContent = "Requirement Saved Successfully";
         }
         if (descText) {
           descText.textContent = isReq
-            ? "Your seat is reserved for tomorrow morning transit operations."
+            ? `Your seat is confirmed for tomorrow morning at ${pickupStop || 'your pickup stop'}.`
             : "Seat freed up for emergency standby buffer. Self-commute declared.";
         }
         if (banner) {
-          banner.className = isReq ? "alert-banner alert-success mt-4" : "alert-banner alert-warning mt-4";
+          banner.className = "alert-banner alert-success mt-4";
+          banner.style.display = "block";
         }
 
         if (saveBtn) {
-          saveBtn.textContent = "Saved Successfully ✓";
+          saveBtn.textContent = "Requirement Saved Successfully ✓";
           setTimeout(() => {
             saveBtn.textContent = "Save Tomorrow's Intention";
             saveBtn.disabled = false;
-          }, 1800);
+          }, 2000);
         }
       } catch (err) {
+        if (statusText) {
+          statusText.textContent = "Failed to save the requirement";
+        }
+        if (descText) {
+          descText.textContent = err.message || "An error occurred while saving your requirement.";
+        }
+        if (banner) {
+          banner.className = "alert-banner alert-danger mt-4";
+          banner.style.display = "block";
+        }
+
         if (saveBtn) {
           saveBtn.textContent = "Save Failed";
           setTimeout(() => {
@@ -1068,8 +1118,15 @@ function initRequirementsModule() {
 
 async function loadManifest(busId) {
   try {
-    const data = await apiRequest(`/manifest?bus_id=${busId}`);
-    if (!data || !Array.isArray(data.students)) return;
+    const resData = await apiRequest(`/manifest?bus_id=${busId}`);
+    if (!resData) return;
+
+    const students = Array.isArray(resData) ? resData : (Array.isArray(resData.students) ? resData.students : []);
+    const busName = resData.busName || `Bus ${busId}`;
+    const capacity = resData.capacity || 20;
+    const totalAllocated = (typeof resData.totalAllocated === "number") ? resData.totalAllocated : students.length;
+    const seatsVacant = (typeof resData.seatsVacant === "number") ? resData.seatsVacant : Math.max(0, capacity - totalAllocated);
+    const totalBoarded = (typeof resData.totalBoarded === "number") ? resData.totalBoarded : students.filter(s => !!s.boarded).length;
 
     // 1. Update Metric Cards
     const allocElem = document.querySelector(`#driver-${busId}-allocated`);
@@ -1078,16 +1135,16 @@ async function loadManifest(busId) {
     const titleElem = document.querySelector(`#driver-${busId}-manifest-title`);
 
     if (allocElem) {
-      allocElem.textContent = `${data.totalAllocated} / ${data.capacity}`;
+      allocElem.textContent = `${totalAllocated} / ${capacity}`;
     }
     if (vacantElem) {
-      vacantElem.textContent = `${data.seatsVacant} Seats Vacant`;
+      vacantElem.textContent = `${seatsVacant} Seats Vacant`;
     }
     if (boardedElem) {
-      boardedElem.textContent = `${data.totalBoarded} / ${data.totalAllocated}`;
+      boardedElem.textContent = `${totalBoarded} / ${totalAllocated}`;
     }
     if (titleElem) {
-      titleElem.textContent = `${data.busName} Passenger Manifest (${data.totalAllocated} Allocated Students)`;
+      titleElem.textContent = `${busName} Passenger Manifest (${totalAllocated} Allocated Students)`;
     }
 
     // 2. Render Table Body
@@ -1096,14 +1153,14 @@ async function loadManifest(busId) {
 
     tbody.replaceChildren();
 
-    if (data.students.length === 0) {
+    if (students.length === 0) {
       const row = document.createElement("tr");
-      row.innerHTML = `<td colspan="7" style="text-align:center;color:var(--slate-500);padding:24px;">No students allocated to ${escapeHtml(data.busName)} in database yet.</td>`;
+      row.innerHTML = `<td colspan="7" style="text-align:center;color:var(--slate-500);padding:24px;">No students allocated to ${escapeHtml(busName)} in database yet.</td>`;
       tbody.appendChild(row);
       return;
     }
 
-    data.students.forEach((stu, index) => {
+    students.forEach((stu, index) => {
       const row = document.createElement("tr");
 
       // Col 1: Seat #
@@ -1111,9 +1168,10 @@ async function loadManifest(busId) {
       seatTd.textContent = stu.seatNo || String(index + 1).padStart(2, "0");
       row.appendChild(seatTd);
 
-      // Col 2: Student ID
+      // Col 2: Student ID & Roll Number
       const idTd = document.createElement("td");
-      idTd.innerHTML = `<strong>#${stu.id}</strong>`;
+      const rollSpan = stu.rollNumber ? `<br><span class="text-xs text-muted font-mono">${escapeHtml(stu.rollNumber)}</span>` : "";
+      idTd.innerHTML = `<strong>#${stu.id}</strong>${rollSpan}`;
       row.appendChild(idTd);
 
       // Col 3: Name
@@ -1145,7 +1203,6 @@ async function loadManifest(busId) {
       // Col 7: Safe Boarding Checkbox (Enforcing Requirement 8)
       const boardTd = document.createElement("td");
       if (!stu.authorized) {
-        // Bar unauthorized students from boarding even if they declared demand
         const unauthBadge = document.createElement("span");
         unauthBadge.className = "badge badge-danger font-semibold";
         unauthBadge.textContent = "Pass Suspended";
@@ -1204,7 +1261,7 @@ async function loadManifest(busId) {
       tbody.appendChild(row);
     });
 
-    console.log(`Bus ${busId} manifest loaded from database: ${data.students.length} students`);
+    console.log(`Bus ${busId} manifest loaded from database: ${students.length} students`);
   } catch (err) {
     console.error(`Failed to load manifest for Bus ${busId}:`, err);
     showBackendStatus(false, `Failed to load Bus ${busId} manifest from database`);
@@ -1215,12 +1272,26 @@ function initDriverManifests() {
   loadManifest(1);
   loadManifest(2);
   loadManifest(3);
+  populateCameraDevices(1);
+  populateCameraDevices(2);
+  populateCameraDevices(3);
 
   window.addEventListener("hashchange", () => {
     const hash = window.location.hash;
-    if (hash === "#view-driver-1") loadManifest(1);
-    else if (hash === "#view-driver-2") loadManifest(2);
-    else if (hash === "#view-driver-3") loadManifest(3);
+    if (hash === "#view-driver-1") {
+      loadManifest(1);
+      populateCameraDevices(1);
+    } else if (hash === "#view-driver-2") {
+      loadManifest(2);
+      populateCameraDevices(2);
+    } else if (hash === "#view-driver-3") {
+      loadManifest(3);
+      populateCameraDevices(3);
+    } else {
+      stopDriverScanner(1);
+      stopDriverScanner(2);
+      stopDriverScanner(3);
+    }
   });
 }
 
@@ -1546,8 +1617,10 @@ function initBreakdownWizard() {
       });
       const res = await apiRequest("/breakdowns", { method: "POST", body });
       showBackendStatus(true, res.message || "Standby Mini Bus successfully deployed");
+      alert(res.message || "Standby Mini Bus successfully deployed and notice broadcasted to affected students.");
       window.location.hash = "view-breakdowns";
       await loadBreakdowns();
+      await loadDashboardStats();
       loadBuses();
     } catch (err) {
       if (errBox && errText) {
@@ -1593,53 +1666,138 @@ function initBreakdownWizard() {
    DASHBOARD METRICS & ALLOCATION SNAPSHOT
    ========================================================================= */
 async function loadDashboardStats() {
+  const elTotal = document.querySelector("#stat-total-students");
+  const elTotalTrend = document.querySelector("#stat-total-students-trend");
+  const elRegBuses = document.querySelector("#stat-regular-buses");
+  const elRegBusesTrend = document.querySelector("#stat-regular-buses-trend");
+  const elTomorrow = document.querySelector("#stat-tomorrow-demand");
+  const elTomorrowTrend = document.querySelector("#stat-tomorrow-demand-trend");
+  const elOperating = document.querySelector("#stat-operating-normally");
+  const elOperatingTrend = document.querySelector("#stat-operating-normally-trend");
+  const elBreakdown = document.querySelector("#stat-breakdown-buses");
+  const elBreakdownTrend = document.querySelector("#stat-breakdown-buses-trend");
+  const elUnallocated = document.querySelector("#stat-unallocated-students");
+  const elUnallocatedTrend = document.querySelector("#stat-unallocated-students-trend");
+  const elGrievance = document.querySelector("#stat-grievance-tickets");
+  const elGrievanceTrend = document.querySelector("#stat-grievance-trend");
+  const elSubtitle = document.querySelector("#stat-snapshot-subtitle");
+  const snapshotContainer = document.querySelector("#dashboard-allocation-snapshot");
+
   try {
     const stats = await apiRequest("/dashboard");
-    if (!stats) return;
+    if (!stats || typeof stats !== "object") {
+      throw new Error("Invalid or empty response from /api/dashboard");
+    }
 
-    const elTotal = document.querySelector("#stat-total-students");
-    const elRegBuses = document.querySelector("#stat-regular-buses");
-    const elTomorrow = document.querySelector("#stat-tomorrow-demand");
-    const elEligible = document.querySelector("#stat-eligible-board");
-    const elOperating = document.querySelector("#stat-operating-normally");
-    const elBreakdown = document.querySelector("#stat-breakdown-buses");
-    const elUnallocated = document.querySelector("#stat-unallocated-students");
-    const elGrievance = document.querySelector("#stat-grievance-tickets");
-    const elSubtitle = document.querySelector("#stat-snapshot-subtitle");
+    // Explicitly parse and ground each metric to a real number (defaulting safely to 0)
+    const totalStudents = typeof stats.totalStudents === "number" ? stats.totalStudents : 0;
+    const allocatedStudents = typeof stats.allocatedStudents === "number" ? stats.allocatedStudents : 0;
+    const unallocatedStudents = typeof stats.unallocatedStudents === "number" ? stats.unallocatedStudents : 0;
+    const regularBuses = typeof stats.regularBuses === "number" ? stats.regularBuses : 0;
+    const totalRegularSeats = typeof stats.totalRegularSeats === "number" ? stats.totalRegularSeats : 0;
+    const operatingNormally = typeof stats.operatingNormally === "number" ? stats.operatingNormally : 0;
+    const breakdownBuses = typeof stats.breakdownBuses === "number" ? stats.breakdownBuses : 0;
+    const breakdownIncidents = typeof stats.breakdownIncidents === "number" ? stats.breakdownIncidents : breakdownBuses;
+    const tomorrowDemand = typeof stats.tomorrowDemand === "number" ? stats.tomorrowDemand : 0;
+    const activeGrievances = typeof stats.activeGrievances === "number" ? stats.activeGrievances : 0;
+    const resolvedGrievances = typeof stats.resolvedGrievances === "number" ? stats.resolvedGrievances : 0;
 
-    if (elTotal) elTotal.textContent = stats.totalStudents;
-    if (elRegBuses) elRegBuses.textContent = `${stats.allocatedStudents} / ${stats.totalRegularSeats} Allocated`;
-    if (elTomorrow) elTomorrow.textContent = stats.tomorrowDemand;
-    if (elEligible) elEligible.textContent = stats.eligibleToBoard;
-    if (elOperating) elOperating.textContent = `${stats.operatingNormally} / ${stats.regularBuses} Active`;
-    if (elBreakdown) elBreakdown.textContent = `${stats.breakdownBuses} Incidents`;
-    if (elUnallocated) elUnallocated.textContent = `${stats.unallocatedStudents} Waitlisted`;
-    if (elGrievance) elGrievance.textContent = stats.activeGrievances;
+    // 1. Total Registered Students (Synchronized value and trend)
+    if (elTotal) elTotal.textContent = totalStudents;
+    if (elTotalTrend) elTotalTrend.textContent = `${totalStudents} Students in Database`;
+
+    // 2. Regular Fleet Buses & Seating Allocation
+    if (elRegBuses) elRegBuses.textContent = `${allocatedStudents} / ${totalRegularSeats} Allocated`;
+    if (elRegBusesTrend) elRegBusesTrend.textContent = `${regularBuses} Active Buses • ${totalRegularSeats} Total Seats`;
+
+    // 3. Riders Expected Tomorrow
+    if (elTomorrow) elTomorrow.textContent = tomorrowDemand;
+    if (elTomorrowTrend) {
+      elTomorrowTrend.textContent = tomorrowDemand === 0
+        ? "No declarations for tomorrow yet"
+        : `${tomorrowDemand} declared riders for tomorrow`;
+    }
+
+    // 4. Operating Normally
+    if (elOperating) elOperating.textContent = `${operatingNormally} / ${regularBuses} Active`;
+    if (elOperatingTrend) elOperatingTrend.textContent = `${operatingNormally} of ${regularBuses} buses on schedule`;
+
+    // 5. Buses with Breakdowns (Synchronized value and trend)
+    if (elBreakdown) {
+      elBreakdown.textContent = breakdownIncidents > 0 ? `${breakdownIncidents} Incidents` : "0 Incidents";
+    }
+    if (elBreakdownTrend) {
+      elBreakdownTrend.textContent = breakdownBuses > 0
+        ? `${breakdownBuses} affected bus • ${breakdownIncidents} logged incident(s)`
+        : "0 fleet incidents • All clear";
+    }
+
+    // 6. Unallocated Students
+    if (elUnallocated) elUnallocated.textContent = `${unallocatedStudents} Waitlisted`;
+    if (elUnallocatedTrend) {
+      elUnallocatedTrend.textContent = unallocatedStudents > 0
+        ? `${unallocatedStudents} Awaiting bus assignment`
+        : "All students allocated to buses";
+    }
+
+    // 7. Active Grievances
+    if (elGrievance) elGrievance.textContent = activeGrievances;
+    if (elGrievanceTrend) {
+      elGrievanceTrend.textContent = `${activeGrievances} Open • ${resolvedGrievances} Resolved`;
+    }
+
+    // 8. Fleet Allocation Subtitle
     if (elSubtitle) {
-      elSubtitle.textContent = `Live MySQL Allocation: ${stats.allocatedStudents} of ${stats.totalStudents} students allocated across ${stats.regularBuses} active regular buses (${stats.unallocatedStudents} unassigned)`;
+      elSubtitle.textContent = `Live MySQL Allocation: ${allocatedStudents} of ${totalStudents} students allocated across ${regularBuses} active regular buses (${unallocatedStudents} unassigned)`;
     }
 
-    const snapshotContainer = document.querySelector("#dashboard-allocation-snapshot");
-    if (snapshotContainer && Array.isArray(stats.allocations)) {
+    // 9. Fleet Allocation Progress Bars
+    if (snapshotContainer) {
       snapshotContainer.replaceChildren();
-      stats.allocations.forEach(bus => {
-        const item = document.createElement("div");
-        item.style.marginBottom = "14px";
-        const percent = Math.min(100, Math.round((bus.allocated / (bus.capacity || 20)) * 100));
-        item.innerHTML = `
-          <div style="display:flex; justify-content:space-between; font-size:0.875rem; margin-bottom:5px;">
-            <strong>${bus.name} (${bus.route || 'Regular Corridor'})</strong>
-            <span><strong>${bus.allocated}</strong> / ${bus.capacity} Seats (${percent}%)</span>
-          </div>
-          <div style="height:8px; background:var(--slate-200, #e2e8f0); border-radius:4px; overflow:hidden;">
-            <div style="width:${percent}%; height:100%; background:${percent >= 100 ? 'var(--danger, #dc2626)' : 'var(--blue, #2563eb)'}; border-radius:4px;"></div>
-          </div>
-        `;
-        snapshotContainer.appendChild(item);
-      });
+      const allocations = Array.isArray(stats.allocations) ? stats.allocations : [];
+      if (allocations.length === 0) {
+        snapshotContainer.innerHTML = '<p class="text-sm text-muted">No regular buses found in database.</p>';
+      } else {
+        allocations.forEach(bus => {
+          const item = document.createElement("div");
+          item.style.marginBottom = "14px";
+          const cap = bus.capacity || 20;
+          const alloc = bus.allocated || 0;
+          const percent = cap > 0 ? Math.min(100, Math.round((alloc / cap) * 100)) : 0;
+          item.innerHTML = `
+            <div style="display:flex; justify-content:space-between; font-size:0.875rem; margin-bottom:5px;">
+              <strong>${escapeHtml(bus.name)} (${escapeHtml(bus.route || 'Regular Corridor')})</strong>
+              <span><strong>${alloc}</strong> / ${cap} Seats (${percent}%)</span>
+            </div>
+            <div style="height:8px; background:var(--slate-200, #e2e8f0); border-radius:4px; overflow:hidden;">
+              <div style="width:${percent}%; height:100%; background:${percent >= 100 ? 'var(--danger, #dc2626)' : 'var(--blue, #2563eb)'}; border-radius:4px;"></div>
+            </div>
+          `;
+          snapshotContainer.appendChild(item);
+        });
+      }
     }
+
   } catch (err) {
-    console.warn("Could not load dashboard stats:", err);
+    console.error("Dashboard metrics error:", err);
+    if (elTotal) elTotal.textContent = "Unable to load";
+    if (elTotalTrend) elTotalTrend.textContent = "Error connecting to database";
+    if (elRegBuses) elRegBuses.textContent = "Unable to load";
+    if (elRegBusesTrend) elRegBusesTrend.textContent = "Error connecting to database";
+    if (elTomorrow) elTomorrow.textContent = "Unable to load";
+    if (elTomorrowTrend) elTomorrowTrend.textContent = "Error connecting to database";
+    if (elOperating) elOperating.textContent = "Unable to load";
+    if (elOperatingTrend) elOperatingTrend.textContent = "Error connecting to database";
+    if (elBreakdown) elBreakdown.textContent = "Unable to load";
+    if (elBreakdownTrend) elBreakdownTrend.textContent = "Error connecting to database";
+    if (elUnallocated) elUnallocated.textContent = "Unable to load";
+    if (elUnallocatedTrend) elUnallocatedTrend.textContent = "Error connecting to database";
+    if (elGrievance) elGrievance.textContent = "Unable to load";
+    if (elGrievanceTrend) elGrievanceTrend.textContent = "Error connecting to database";
+    if (elSubtitle) elSubtitle.textContent = "Unable to load fleet allocation snapshot from database.";
+    if (snapshotContainer) {
+      snapshotContainer.innerHTML = '<p class="text-sm text-danger">Unable to load fleet allocation snapshot from database.</p>';
+    }
   }
 }
 
@@ -1691,7 +1849,26 @@ function updateActiveUserRole() {
   const role = document.querySelector("#topbar-user-role");
   const pills = document.querySelectorAll(".role-switcher-links .role-pill");
 
-  let currentPersona = sessionStorage.getItem("authRole") || "admin";
+  const authRole = sessionStorage.getItem("authRole");
+  if (authRole === "driver") {
+    const dBusId = sessionStorage.getItem("driverBusId") || "1";
+    const dName = sessionStorage.getItem("driverName") || `Driver ${dBusId}`;
+    const dBusName = sessionStorage.getItem("driverBusName") || `Bus ${dBusId}`;
+    if (avatar) avatar.textContent = `D${dBusId}`;
+    if (name) name.textContent = `${dName} (Driver)`;
+    if (role) role.textContent = `${dBusName} \u2022 Assigned Driver`;
+    pills.forEach(pill => {
+      const pillHref = pill.getAttribute("href");
+      if (pillHref === `#view-driver-${dBusId}`) {
+        pill.classList.add("active");
+      } else {
+        pill.classList.remove("active");
+      }
+    });
+    return;
+  }
+
+  let currentPersona = authRole || "admin";
   if (hash === "#view-driver-1") currentPersona = "driver-1";
   else if (hash === "#view-driver-2") currentPersona = "driver-2";
   else if (hash === "#view-driver-3") currentPersona = "driver-3";
@@ -1718,30 +1895,81 @@ function updateActiveUserRole() {
     if (avatar) avatar.textContent = "D1";
     if (name) name.textContent = "Murugan K (Driver 1)";
     if (role) role.textContent = "Bus 1 \u2022 TN-33-CB-101";
+    showBackendStatus(true, "Logged in as Driver: Murugan K (Bus 1)");
   } else if (currentPersona === "driver-2") {
     if (avatar) avatar.textContent = "D2";
     if (name) name.textContent = "Senthil Kumar (Driver 2)";
     if (role) role.textContent = "Bus 2 \u2022 TN-33-CB-102";
+    showBackendStatus(true, "Logged in as Driver: Senthil Kumar (Bus 2)");
   } else if (currentPersona === "driver-3") {
     if (avatar) avatar.textContent = "D3";
     if (name) name.textContent = "Velu M (Driver 3)";
     if (role) role.textContent = "Bus 3 \u2022 TN-33-CB-103";
+    showBackendStatus(true, "Logged in as Driver: Velu M (Bus 3)");
   } else if (currentPersona === "student") {
     const activeStudentName = sessionStorage.getItem("activeStudentName") || "Student";
     const activeStudentId = sessionStorage.getItem("activeStudentId") || "105";
     if (avatar) avatar.textContent = "ST";
     if (name) name.textContent = `${activeStudentName} (#${activeStudentId})`;
     if (role) role.textContent = "Student Transit Card";
+    showBackendStatus(true, `Logged in as Student: ${activeStudentName} (#${activeStudentId})`);
   } else {
     if (avatar) avatar.textContent = "AD";
     if (name) name.textContent = "Transport Admin";
     if (role) role.textContent = "Transportation Office";
+    showBackendStatus(true, "Logged in as Transport Admin");
   }
 }
 
 /* =========================================================================
-   STUDENT AUTHENTICATION, RBAC & 7-FEATURE LOADERS
+   AUTHENTICATION, RBAC & 7-FEATURE LOADERS
    ========================================================================= */
+
+async function loginDriver(busId, password) {
+  const bId = busId || document.querySelector("#driverLoginBus")?.value || 1;
+  const pwd = password || document.querySelector("#driverLoginPassword")?.value || "driver123";
+  const errEl = document.querySelector("#driverLoginError");
+  if (errEl) errEl.style.display = "none";
+
+  try {
+    const res = await apiRequest("/auth/login", {
+      method: "POST",
+      body: new URLSearchParams({ bus_id: String(bId), password: pwd, role: "driver" })
+    });
+    sessionStorage.setItem("authToken", res.token);
+    sessionStorage.setItem("authRole", "driver");
+    sessionStorage.setItem("driverBusId", String(res.busId || bId));
+    sessionStorage.setItem("driverName", res.driverName || `Driver ${bId}`);
+    sessionStorage.setItem("driverBusName", res.busName || `Bus ${bId}`);
+    sessionStorage.setItem("driverRouteName", res.routeName || "");
+    sessionStorage.removeItem("activeStudentId");
+    sessionStorage.removeItem("activeStudentName");
+
+    applyRoleState();
+    window.location.hash = `view-driver-${res.busId || bId}`;
+    showBackendStatus(true, `Logged in as Driver: ${res.driverName || 'Driver'} (${res.busName || 'Bus ' + bId})`);
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = err.message || "Invalid driver credentials. Please enter a valid driver password.";
+      errEl.style.display = "block";
+    } else {
+      alert("Driver sign-in failed: " + err.message);
+    }
+    showBackendStatus(false, err.message);
+  }
+}
+
+function logoutDriver() {
+  sessionStorage.removeItem("authToken");
+  sessionStorage.removeItem("authRole");
+  sessionStorage.removeItem("driverBusId");
+  sessionStorage.removeItem("driverName");
+  sessionStorage.removeItem("driverBusName");
+  sessionStorage.removeItem("driverRouteName");
+  document.body.classList.remove("role-driver");
+  window.location.hash = "loginScreen";
+  updateActiveUserRole();
+}
 
 async function loginStudent(studentId) {
   const targetId = studentId || document.querySelector("#studentLoginId")?.value || 105;
@@ -1754,6 +1982,8 @@ async function loginStudent(studentId) {
     sessionStorage.setItem("authRole", "student");
     sessionStorage.setItem("activeStudentId", String(res.studentId || targetId));
     sessionStorage.setItem("activeStudentName", res.name || "Student");
+    sessionStorage.removeItem("driverBusId");
+    sessionStorage.removeItem("driverName");
 
     applyRoleState();
     window.location.hash = "view-student-dashboard";
@@ -1775,6 +2005,8 @@ async function loginAdmin() {
     sessionStorage.setItem("authRole", "admin");
     sessionStorage.removeItem("activeStudentId");
     sessionStorage.removeItem("activeStudentName");
+    sessionStorage.removeItem("driverBusId");
+    sessionStorage.removeItem("driverName");
 
     applyRoleState();
     window.location.hash = "view-admin-dashboard";
@@ -1803,20 +2035,41 @@ function applyRoleState() {
 
   if (role === "student") {
     document.body.classList.add("role-student");
+    document.body.classList.remove("role-driver");
     if (studentNav) studentNav.style.display = "block";
     if (adminNav) adminNav.style.display = "none";
 
-    // Block admin views for student role
+    // Block admin views and driver cockpits for student role
     const adminViews = [
       "#view-admin-dashboard", "#view-students", "#view-buses",
       "#view-routes", "#view-breakdowns", "#view-attendance",
       "#view-complaints", "#view-fees", "#view-requirements"
     ];
-    if (adminViews.includes(hash)) {
+    if (adminViews.includes(hash) || hash.startsWith("#view-driver-")) {
       window.location.hash = "view-student-dashboard";
+    }
+  } else if (role === "driver") {
+    document.body.classList.remove("role-student");
+    document.body.classList.add("role-driver");
+    if (studentNav) studentNav.style.display = "none";
+    if (adminNav) adminNav.style.display = "none";
+
+    const dBusId = sessionStorage.getItem("driverBusId") || "1";
+    // Block admin views & student views for driver role, redirect to assigned driver cockpit
+    const blockedViews = [
+      "#view-admin-dashboard", "#view-students", "#view-buses",
+      "#view-routes", "#view-breakdowns", "#view-attendance",
+      "#view-complaints", "#view-fees", "#view-requirements",
+      "#view-student-dashboard", "#view-student-attendance",
+      "#view-student-route", "#view-student-alerts",
+      "#view-student-complaints", "#view-student-fees", "#view-student-profile"
+    ];
+    if (blockedViews.includes(hash) || (!hash.startsWith("#view-driver-") && hash !== "#loginScreen")) {
+      window.location.hash = `view-driver-${dBusId}`;
     }
   } else {
     document.body.classList.remove("role-student");
+    document.body.classList.remove("role-driver");
     if (studentNav) studentNav.style.display = "none";
     if (adminNav) adminNav.style.display = "block";
   }
@@ -2035,13 +2288,15 @@ async function loadStudentAlerts(studentId) {
       alerts.forEach(al => {
         const box = document.createElement("div");
         box.className = "alert-banner alert-warning mb-4";
+        const alertTitle = al.title || `Active Breakdown Incident • ${al.busName || 'Bus'}`;
+        const alertMessage = al.message || `Your regular bus has experienced a breakdown. A replacement mini bus has been assigned and is on its way to your pickup stop.`;
         box.innerHTML = `
           <div class="alert-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
           <div class="alert-content">
-            <strong>Active Breakdown Incident &bull; ${al.busName}</strong>
-            <p>Vehicle experienced breakdown at <strong>${al.location}</strong>. Standby Mini Bus (TN-33-MB-201) deployed. Estimated delay: <strong class="text-danger">+${al.delayMinutes} mins</strong>. Alternate Route: <strong>${al.alternateRoute || 'Perundurai Hub Arterial'}</strong>.</p>
+            <strong>${alertTitle}</strong>
+            <p>${alertMessage}</p>
           </div>
         `;
         container.appendChild(box);
@@ -2133,7 +2388,8 @@ async function loadStudentFees(studentId) {
     const dateEl = document.querySelector("#stu-fee-date");
     const authBadge = document.querySelector("#stu-fee-auth-badge");
 
-    if (amountEl) amountEl.textContent = `\u20B9${data.amount || 12000}.00`;
+    const feeVal = Number(data.amount || 0);
+    if (amountEl) amountEl.textContent = `\u20B9${feeVal.toFixed(2)}`;
     if (statusEl) {
       statusEl.textContent = data.status || "Paid";
       statusEl.className = data.cleared ? "text-emerald" : "text-amber";
@@ -2713,6 +2969,44 @@ function initStudentLogin() {
 }
 
 /* =========================================================================
+   DRIVER LOGIN FORM & QUICK ACCESS BUTTONS
+   ========================================================================= */
+function initDriverLogin() {
+  const driverForm = document.querySelector("#form-driver-login");
+  if (driverForm) {
+    driverForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const busSelect = document.querySelector("#driverLoginBus");
+      const pwdInput = document.querySelector("#driverLoginPassword");
+      const busId = busSelect ? busSelect.value : "1";
+      const pwd = pwdInput ? pwdInput.value : "";
+      loginDriver(busId, pwd);
+    });
+  }
+
+  // Quick fill buttons
+  document.querySelectorAll(".btn-driver-quick").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const busId = btn.getAttribute("data-bus-id");
+      const busSelect = document.querySelector("#driverLoginBus");
+      const pwdInput = document.querySelector("#driverLoginPassword");
+      if (busSelect) busSelect.value = busId;
+      if (pwdInput) pwdInput.value = "driver123";
+      loginDriver(busId, "driver123");
+    });
+  });
+
+  // Wire driver logout buttons
+  document.querySelectorAll(".btn-driver-logout").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      logoutDriver();
+    });
+  });
+}
+
+/* =========================================================================
    STUDENT GRIEVANCE SUBMISSION FORM (MODAL & PANEL)
    ========================================================================= */
 function initComplaintForm() {
@@ -2761,6 +3055,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDashboardStats();
   initAllocationModal();
   initStudentLogin();
+  initDriverLogin();
   initComplaintForm();
   initStudentComplaintPanelForm();
 
@@ -4712,4 +5007,640 @@ async function renderStudentRouteMap(data) {
 }
 
 
+
+
+
+// ===================================================================
+// MODULE: DRIVER WEBCAM BARCODE SCANNER (STUDENT ID ATTENDANCE)
+// ===================================================================
+
+let activeBarcodeReaders = {}; // busId -> ZXing.BrowserMultiFormatReader
+let lastScannedCode = null;
+let lastScanTimestamp = 0;
+
+// Web Audio API Sound Synthesizer for Immediate Auditory Feedback
+function playScannerTone(type) {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+
+    if (type === "success") {
+      // 2 quick cheerful beeps (587Hz -> 880Hz)
+      const now = ctx.currentTime;
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(587.33, now); // D5
+      gain1.gain.setValueAtTime(0.15, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.08);
+
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(880.00, now + 0.1); // A5
+      gain2.gain.setValueAtTime(0.18, now + 0.1);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.1);
+      osc2.stop(now + 0.22);
+    } else if (type === "warning") {
+      // Mid warning tone (440Hz -> 370Hz)
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.linearRampToValueAtTime(370, now + 0.18);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } else {
+      // Error buzz (200Hz -> 140Hz)
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.linearRampToValueAtTime(140, now + 0.25);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    }
+  } catch (err) {
+    console.debug("Web Audio tone error:", err);
+  }
+}
+
+// High-Speed Voice Feedback via Browser SpeechSynthesis
+function speakFast(text) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel(); // Cancel any previous speech backlog immediately
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.35; // Speak fastly, crisp, and naturally
+    utterance.pitch = 1.05;
+    utterance.volume = 1.0;
+    utterance.lang = "en-US";
+    window.speechSynthesis.speak(utterance);
+  } catch (err) {
+    console.debug("Voice feedback notice:", err);
+  }
+}
+
+// Populate Camera Selector Dropdown with available video inputs
+async function populateCameraDevices(busId) {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(d => d.kind === "videoinput");
+    const select = document.querySelector(`#driver-${busId}-camera-select`);
+    if (!select) return;
+
+    select.innerHTML = "";
+    if (videoDevices.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Default Laptop Webcam";
+      select.appendChild(opt);
+    } else {
+      videoDevices.forEach((dev, idx) => {
+        const opt = document.createElement("option");
+        opt.value = dev.deviceId;
+        opt.textContent = dev.label || `Camera ${idx + 1}`;
+        select.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.warn("Could not enumerate video devices:", err);
+  }
+}
+
+// Start Laptop Webcam Scanner via Browser and ZXing
+// Active scanner session tracker
+const driverScannerLoops = {};
+
+// Helper to decode 1D barcode from a Video element using multi-region ROI & dual binarizers
+function scanVideoFrameROI(videoElem, reader) {
+  if (!videoElem || videoElem.paused || videoElem.ended) return null;
+  const vw = videoElem.videoWidth;
+  const vh = videoElem.videoHeight;
+  if (!vw || !vh || vw < 20 || vh < 20) return null;
+
+  if (!window._scanCanvas) {
+    window._scanCanvas = document.createElement("canvas");
+    window._scanCtx = window._scanCanvas.getContext("2d", { willReadFrequently: true });
+  }
+  const canvas = window._scanCanvas;
+  const ctx = window._scanCtx;
+
+  function trySubRegion(sx, sy, sw, sh) {
+    sx = Math.max(0, Math.min(Math.floor(sx), vw - 1));
+    sy = Math.max(0, Math.min(Math.floor(sy), vh - 1));
+    sw = Math.min(Math.floor(sw), vw - sx);
+    sh = Math.min(Math.floor(sh), vh - sy);
+    if (sw < 20 || sh < 10) return null;
+
+    canvas.width = sw;
+    canvas.height = sh;
+    ctx.drawImage(videoElem, sx, sy, sw, sh, 0, 0, sw, sh);
+    const imgData = ctx.getImageData(0, 0, sw, sh);
+    const d = imgData.data;
+    const len = sw * sh;
+    const int32Array = new Int32Array(len);
+    for (let i = 0; i < len; i++) {
+      int32Array[i] = (d[i * 4 + 3] << 24) | (d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2];
+    }
+    const source = new ZXing.RGBLuminanceSource(int32Array, sw, sh);
+
+    // Pass 1: HybridBinarizer
+    try {
+      const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+      const res = reader.decode(bitmap);
+      if (res && res.getText()) return res;
+    } catch (e1) {}
+
+    // Pass 2: GlobalHistogramBinarizer (superior under laptop lighting, glare & reflections)
+    try {
+      const bitmap2 = new ZXing.BinaryBitmap(new ZXing.GlobalHistogramBinarizer(source));
+      const res2 = reader.decode(bitmap2);
+      if (res2 && res2.getText()) return res2;
+    } catch (e2) {}
+
+    return null;
+  }
+
+  // 1. Center Reticle Box (aligned with red laser target)
+  const rw = vw * 0.80;
+  const rh = vh * 0.40;
+  const rx = (vw - rw) / 2;
+  const ry = (vh - rh) / 2;
+  const res1 = trySubRegion(rx, ry, rw, rh);
+  if (res1) return res1;
+
+  // 2. Lower region (where ID card barcodes are positioned when user holds card in view)
+  const res2 = trySubRegion(vw * 0.05, vh * 0.50, vw * 0.90, vh * 0.48);
+  if (res2) return res2;
+
+  // 3. Middle wide stripe
+  const res3 = trySubRegion(0, vh * 0.20, vw, vh * 0.60);
+  if (res3) return res3;
+
+  return null;
+}
+
+// Start Laptop Webcam Scanner via Browser and ZXing
+async function startDriverScanner(busId) {
+  if (typeof ZXing === "undefined") {
+    showScannerAlert(busId, "error", "Barcode Engine Error", "ZXing barcode library is not loaded. Please refresh page.");
+    return;
+  }
+
+  // Stop any existing session on this bus
+  await stopDriverScanner(busId);
+
+  const videoElem = document.querySelector(`#driver-${busId}-scanner-video`);
+  const overlayElem = document.querySelector(`#driver-${busId}-scanner-overlay`);
+  const placeholderElem = document.querySelector(`#driver-${busId}-scanner-placeholder`);
+  const statusBadge = document.querySelector(`#driver-${busId}-scanner-status-badge`);
+  const btnStart = document.querySelector(`#driver-${busId}-btn-start-camera`);
+  const btnStop = document.querySelector(`#driver-${busId}-btn-stop-camera`);
+  const selectDev = document.querySelector(`#driver-${busId}-camera-select`);
+
+  if (!videoElem) return;
+
+  try {
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.CODE_39,
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A
+    ]);
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+    const reader = new ZXing.MultiFormatReader();
+    reader.setHints(hints);
+
+    await populateCameraDevices(busId);
+    const selectedDeviceId = selectDev ? selectDev.value : undefined;
+
+    const constraints = {
+      video: {
+        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
+        width: { ideal: 1280, min: 640 },
+        height: { ideal: 720, min: 480 },
+        facingMode: "environment"
+      }
+    };
+
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (e) {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    }
+
+    videoElem.srcObject = stream;
+    await videoElem.play();
+
+    // Update UI
+    if (placeholderElem) placeholderElem.style.display = "none";
+    if (overlayElem) overlayElem.style.display = "flex";
+    if (btnStart) btnStart.disabled = true;
+    if (btnStop) btnStop.disabled = false;
+    if (statusBadge) {
+      statusBadge.textContent = "Scanning Live...";
+      statusBadge.className = "badge badge-success";
+    }
+
+    showScannerAlert(busId, "info", "Camera Active", "Point student ID card barcode toward the camera lens inside the reticle.");
+
+    // Continuous scanning loop with high-performance ROI processor
+    let isScanning = true;
+    driverScannerLoops[busId] = {
+      stop: () => { isScanning = false; }
+    };
+
+    const runScanLoop = () => {
+      if (!isScanning) return;
+      try {
+        const result = scanVideoFrameROI(videoElem, reader);
+        if (result) {
+          const text = result.getText();
+          let formatName = "CODE_128";
+          try {
+            if (result.getBarcodeFormat() != null && ZXing.BarcodeFormat) {
+              formatName = Object.keys(ZXing.BarcodeFormat).find(k => ZXing.BarcodeFormat[k] === result.getBarcodeFormat()) || "CODE_128";
+            }
+          } catch (e) {}
+          handleBarcodeScanned(text, formatName, busId);
+        }
+      } catch (err) {}
+
+      if (isScanning) {
+        setTimeout(runScanLoop, 65); // ~15 frames/sec
+      }
+    };
+
+    setTimeout(runScanLoop, 250);
+
+  } catch (err) {
+    console.error("Camera access error:", err);
+    let msg = "Could not access laptop webcam: " + (err.message || err.name);
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      msg = "Camera permission was denied. Please allow browser camera access in site settings.";
+    } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+      msg = "No webcam device found on your computer. You can use 'Scan Sample Card' or upload an ID card image.";
+    }
+    showScannerAlert(busId, "error", "Camera Access Notice", msg);
+    if (statusBadge) {
+      statusBadge.textContent = "Camera Blocked";
+      statusBadge.className = "badge badge-danger";
+    }
+  }
+}
+
+// Stop Laptop Webcam Scanner and Release Stream
+async function stopDriverScanner(busId) {
+  if (driverScannerLoops[busId]) {
+    driverScannerLoops[busId].stop();
+    delete driverScannerLoops[busId];
+  }
+
+  const codeReader = activeBarcodeReaders[busId];
+  if (codeReader) {
+    try {
+      codeReader.reset();
+    } catch (e) {}
+    delete activeBarcodeReaders[busId];
+  }
+
+  const videoElem = document.querySelector(`#driver-${busId}-scanner-video`);
+  if (videoElem && videoElem.srcObject) {
+    try {
+      const tracks = videoElem.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+      videoElem.srcObject = null;
+    } catch (e) {}
+  }
+
+  const overlayElem = document.querySelector(`#driver-${busId}-scanner-overlay`);
+  const placeholderElem = document.querySelector(`#driver-${busId}-scanner-placeholder`);
+  const statusBadge = document.querySelector(`#driver-${busId}-scanner-status-badge`);
+  const btnStart = document.querySelector(`#driver-${busId}-btn-start-camera`);
+  const btnStop = document.querySelector(`#driver-${busId}-btn-stop-camera`);
+
+  if (placeholderElem) placeholderElem.style.display = "flex";
+  if (overlayElem) overlayElem.style.display = "none";
+  if (btnStart) btnStart.disabled = false;
+  if (btnStop) btnStop.disabled = true;
+  if (statusBadge) {
+    statusBadge.textContent = "Camera Inactive";
+    statusBadge.className = "badge badge-neutral";
+  }
+}
+
+// Change selected camera device
+async function changeDriverScannerDevice(busId) {
+  if (activeBarcodeReaders[busId]) {
+    await startDriverScanner(busId);
+  }
+}
+
+// Handle Decoded Barcode (Debounce + Server Validation + Feedback)
+async function handleBarcodeScanned(barcodeText, formatName, busId) {
+  if (!barcodeText || !barcodeText.trim()) return;
+  const cleanCode = barcodeText.trim();
+
+  // Debounce check: Prevent rapid duplicate triggers within 3 seconds
+  const now = Date.now();
+  if (cleanCode === lastScannedCode && (now - lastScanTimestamp) < 3000) {
+    return;
+  }
+  lastScannedCode = cleanCode;
+  lastScanTimestamp = now;
+
+  // 1. Display Decoded Text in UI
+  const decodedValElem = document.querySelector(`#driver-${busId}-decoded-val`);
+  const formatElem = document.querySelector(`#driver-${busId}-barcode-format`);
+  const scanBadge = document.querySelector(`#driver-${busId}-scan-badge`);
+
+  if (decodedValElem) decodedValElem.textContent = cleanCode;
+  if (formatElem) formatElem.textContent = `Format: ${formatName || "Code 128 (1D Barcode)"}`;
+  if (scanBadge) {
+    scanBadge.textContent = "Verifying...";
+    scanBadge.className = "badge badge-info";
+  }
+
+  // 2. Transmit to Backend POST /attendance/scan via API_BASE (handles both 8080 and Live Server 5500)
+  try {
+    const res = await fetch(`${API_BASE}/attendance/scan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Role": "driver"
+      },
+      body: JSON.stringify({
+        barcode: cleanCode,
+        bus_id: busId
+      })
+    });
+
+    const text = await res.text();
+    let data = {};
+    if (text && text.trim().length > 0) {
+      try {
+        data = JSON.parse(text);
+      } catch (parseErr) {
+        console.warn("Could not parse scan response as JSON:", text);
+      }
+    }
+
+    if (res.status === 200 && data.success) {
+      // SUCCESSFUL BOARDING
+      playScannerTone("success");
+      const firstName = (data.student?.name || data.name || "").split(" ")[0];
+      speakFast(firstName ? `Thank you, ${firstName}!` : "Thank you!");
+      if (scanBadge) {
+        scanBadge.textContent = "Attendance Marked ✓";
+        scanBadge.className = "badge badge-success";
+      }
+
+      // Display student profile card
+      displayStudentProfile(busId, data.student);
+      showScannerAlert(busId, "success", "Thank you! Attendance marked.", data.message || "Thank you! Attendance marked.");
+
+      // Update driver manifest & dashboard statistics
+      await loadManifest(busId);
+      loadBuses();
+      const todayStr = new Date().toISOString().split("T")[0];
+      loadAttendance(todayStr);
+      loadDashboardStats();
+
+    } else if (res.status === 409 || data.status === "ALREADY_BOARDED") {
+      // DUPLICATE BOARDING WARNING (Still acknowledge with fast Thank you)
+      playScannerTone("warning");
+      const firstName = (data.name || data.student?.name || "").split(" ")[0];
+      speakFast(firstName ? `Thank you, ${firstName}!` : "Thank you!");
+      if (scanBadge) {
+        scanBadge.textContent = "Already Boarded Today";
+        scanBadge.className = "badge badge-warning";
+      }
+      if (data.name) {
+        displayStudentProfile(busId, data);
+      }
+      showScannerAlert(busId, "warning", "Already Boarded Today", data.message || `Student has already boarded Bus ${busId} today.`);
+
+    } else if (res.status === 400 || data.status === "WRONG_BUS") {
+      // WRONG BUS ALLOCATION ALERT
+      playScannerTone("error");
+      speakFast("Wrong bus alert!");
+      if (scanBadge) {
+        scanBadge.textContent = "Wrong Bus Alert";
+        scanBadge.className = "badge badge-danger";
+      }
+      if (data.name) {
+        displayStudentProfile(busId, data);
+      }
+      showScannerAlert(busId, "error", "Wrong Bus Alert", data.message || `Student is allocated to Bus ${data.assignedBusId}, not Bus ${busId}!`);
+
+    } else if (res.status === 403 || data.status === "UNAUTHORIZED") {
+      // UNAUTHORIZED / TRANSPORT FEE UNPAID
+      playScannerTone("error");
+      speakFast("Access denied!");
+      if (scanBadge) {
+        scanBadge.textContent = "Transport Fee Unpaid";
+        scanBadge.className = "badge badge-danger";
+      }
+      if (data.name) {
+        displayStudentProfile(busId, data);
+      }
+      showScannerAlert(busId, "error", "Access Denied", data.message || `Student has not paid transport fees. Transport pass inactive.`);
+
+    } else {
+      // STUDENT NOT FOUND / UNREGISTERED BARCODE
+      playScannerTone("error");
+      speakFast("Unregistered barcode!");
+      if (scanBadge) {
+        scanBadge.textContent = "Unregistered Barcode";
+        scanBadge.className = "badge badge-danger";
+      }
+      hideStudentProfile(busId);
+      showScannerAlert(busId, "error", "Unregistered Barcode", data.message || `No student found for barcode: ${cleanCode}`);
+    }
+
+  } catch (netErr) {
+    console.error("Attendance scan error:", netErr);
+    playScannerTone("error");
+    showScannerAlert(busId, "error", "Network Error", "Could not connect to backend server: " + netErr.message);
+  }
+}
+
+// Display Student Profile in Verification Card
+function displayStudentProfile(busId, stu) {
+  const container = document.querySelector(`#driver-${busId}-student-info`);
+  const nameElem = document.querySelector(`#driver-${busId}-student-name`);
+  const rollElem = document.querySelector(`#driver-${busId}-student-roll`);
+  const deptElem = document.querySelector(`#driver-${busId}-student-dept`);
+  const stopElem = document.querySelector(`#driver-${busId}-student-stop`);
+
+  if (!container) return;
+  if (nameElem) nameElem.textContent = stu.name || "Student";
+  if (rollElem) rollElem.textContent = `Roll No: ${stu.rollNumber || stu.roll_number || stu.studentId || "N/A"}`;
+  if (deptElem) deptElem.textContent = `Dept: ${stu.department || "Engineering"}`;
+  if (stopElem) stopElem.textContent = `Pickup Stop: ${stu.pickupStop || stu.pickup_stop || "Designated Stop"}`;
+  container.style.display = "block";
+}
+
+function hideStudentProfile(busId) {
+  const container = document.querySelector(`#driver-${busId}-student-info`);
+  if (container) container.style.display = "none";
+}
+
+// Show alert banner
+function showScannerAlert(busId, type, title, message) {
+  const alertElem = document.querySelector(`#driver-${busId}-scanner-alert`);
+  const titleElem = document.querySelector(`#driver-${busId}-scanner-alert-title`);
+  const msgElem = document.querySelector(`#driver-${busId}-scanner-alert-msg`);
+
+  if (!alertElem) return;
+  alertElem.style.display = "block";
+  alertElem.className = `alert-banner mt-3 ${type === "success" ? "alert-success" : type === "warning" ? "alert-warning" : type === "info" ? "alert-info" : "alert-danger"}`;
+  if (titleElem) titleElem.textContent = title;
+  if (msgElem) msgElem.textContent = message;
+}
+
+// Helper to decode 1D barcode from an Image element using pure ZXing and Region-of-Interest (ROI) scanning
+function decodeBarcodeWithROI(imageElement) {
+  const hints = new Map();
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+    ZXing.BarcodeFormat.CODE_128,
+    ZXing.BarcodeFormat.CODE_39,
+    ZXing.BarcodeFormat.EAN_13,
+    ZXing.BarcodeFormat.EAN_8,
+    ZXing.BarcodeFormat.UPC_A
+  ]);
+  hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+  const reader = new ZXing.MultiFormatReader();
+  reader.setHints(hints);
+
+  const fullW = imageElement.naturalWidth || imageElement.width;
+  const fullH = imageElement.naturalHeight || imageElement.height;
+
+  function decodeCanvasRegion(sx, sy, sw, sh) {
+    const canvas = document.createElement("canvas");
+    canvas.width = sw;
+    canvas.height = sh;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(imageElement, sx, sy, sw, sh, 0, 0, sw, sh);
+    const imgData = ctx.getImageData(0, 0, sw, sh);
+    const d = imgData.data;
+    const int32Array = new Int32Array(sw * sh);
+    for (let i = 0; i < sw * sh; i++) {
+      int32Array[i] = (d[i * 4 + 3] << 24) | (d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2];
+    }
+    const source = new ZXing.RGBLuminanceSource(int32Array, sw, sh);
+    try {
+      const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+      return reader.decode(bitmap);
+    } catch (e1) {
+      const bitmap2 = new ZXing.BinaryBitmap(new ZXing.GlobalHistogramBinarizer(source));
+      return reader.decode(bitmap2);
+    }
+  }
+
+  // Attempt 1: Lower 35% (the exact barcode region on college ID cards)
+  try {
+    const cropY = Math.floor(fullH * 0.65);
+    const cropH = fullH - cropY;
+    return decodeCanvasRegion(0, cropY, fullW, cropH);
+  } catch (e1) {}
+
+  // Attempt 2: Lower 20% (tight barcode band)
+  try {
+    const cropY = Math.floor(fullH * 0.78);
+    const cropH = Math.floor(fullH * 0.18);
+    return decodeCanvasRegion(0, cropY, fullW, cropH);
+  } catch (e2) {}
+
+  // Attempt 3: Center band (for webcam reticle orientation)
+  try {
+    const cropY = Math.floor(fullH * 0.25);
+    const cropH = Math.floor(fullH * 0.5);
+    return decodeCanvasRegion(0, cropY, fullW, cropH);
+  } catch (e3) {}
+
+  // Attempt 4: Entire full image
+  return decodeCanvasRegion(0, 0, fullW, fullH);
+}
+
+// 1-Click Test: Scan the provided sample ID Card (25CSR223)
+async function testScanSampleCard(busId) {
+  showScannerAlert(busId, "info", "Testing College ID Barcode...", "Loading college ID card image (25CSR223)...");
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => {
+        img.onerror = reject;
+        img.src = "frontend/sample_id_card.jpg";
+      };
+      img.src = "sample_id_card.jpg";
+    });
+
+    const result = decodeBarcodeWithROI(img);
+    if (result) {
+      console.log("ZXing decoded sample card:", result.getText(), result.getBarcodeFormat());
+      await handleBarcodeScanned(result.getText(), "Code 128 (College ID Card)", busId);
+    }
+  } catch (err) {
+    console.error("Direct image decode error:", err);
+    showScannerAlert(busId, "error", "Decode Error", "Could not decode barcode from sample card: " + err.message);
+  }
+}
+
+// Upload custom ID card image to decode
+async function handleBarcodeImageUpload(event, busId) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  showScannerAlert(busId, "info", "Decoding Uploaded Card...", `Processing image file: ${file.name}`);
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const dataUrl = e.target.result;
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const result = decodeBarcodeWithROI(img);
+      if (result) {
+        console.log("ZXing decoded uploaded card:", result.getText(), result.getBarcodeFormat());
+        await handleBarcodeScanned(result.getText(), "Code 128 (College ID Card)", busId);
+      }
+    } catch (err) {
+      console.error("Image decode error:", err);
+      showScannerAlert(busId, "error", "No Barcode Detected", "Could not detect a clear 1D barcode in the uploaded image. Please ensure good lighting and barcode visibility.");
+    }
+  };
+  reader.readAsDataURL(file);
+}
 
