@@ -433,7 +433,7 @@ public class BackendServer {
                                     + ",\"paymentDate\":\"" + (rs.getDate("payment_date") != null ? rs.getDate("payment_date").toString() : "") + "\""
                                     + ",\"declaredTomorrow\":" + (declTomorrow != null ? declTomorrow.toString() : "null")
                                     + ",\"boarded\":" + rs.getBoolean("boarded")
-                                    + ",\"attendanceStatus\":\"" + escape(rs.getString("attendance_status") != null ? rs.getString("attendance_status") : "Present") + "\""
+                                    + ",\"attendanceStatus\":\"" + escape(rs.getString("attendance_status") != null ? rs.getString("attendance_status") : "Absent") + "\""
                                     + "}";
 
                             send(exchange, 200, json);
@@ -459,7 +459,7 @@ public class BackendServer {
             String sql = "SELECT s.student_id, s.name, s.roll_number, s.department, s.pickup_stop, "
                     + "s.transport_authorized, s.assigned_bus_id, "
                     + "b.bus_name, b.bus_number, "
-                    + "f.payment_status "
+                    + "f.payment_status, f.amount AS fee_amount "
                     + "FROM students s "
                     + "LEFT JOIN buses b ON s.assigned_bus_id = b.bus_id "
                     + "LEFT JOIN fees f ON s.student_id = f.student_id "
@@ -490,7 +490,8 @@ public class BackendServer {
                         .append(",\"assignedBusId\":").append(hasBus ? busId : "null")
                         .append(",\"bus\":\"").append(escape(hasBus ? rs.getString("bus_name") : ""))
                         .append("\",\"feeStatus\":\"").append(escape(feeStatus))
-                        .append("\"}");
+                        .append("\",\"feeAmount\":").append(rs.getObject("fee_amount") != null ? rs.getDouble("fee_amount") : 0.0)
+                        .append("}");
                 }
                 json.append(']');
                 send(exchange, 200, json.toString());
@@ -1398,17 +1399,6 @@ public class BackendServer {
             boolean capacitySufficient = (totalPassengers <= standbyCapacity);
             int seatDeficit = Math.max(0, totalPassengers - standbyCapacity);
 
-            // Record breakdown in MySQL breakdowns table
-            String insertBd = "INSERT INTO breakdowns (broken_bus_id, replacement_bus_id, delay_minutes, status, breakdown_location, alternate_route) "
-                    + "VALUES (?, 4, ?, 'Active', ?, ?)";
-            try (PreparedStatement ps = con.prepareStatement(insertBd)) {
-                ps.setInt(1, busId);
-                ps.setInt(2, altRoute.totalTravelTime + reliefRoute.totalTravelTime);
-                ps.setString(3, location);
-                ps.setString(4, altRoute.recommendedPath);
-                ps.executeUpdate();
-            } catch (SQLException ignored) {}
-
             StringBuilder json = new StringBuilder("{");
             json.append("\"success\":true")
                 .append(",\"brokenBusId\":").append(busId)
@@ -1799,7 +1789,19 @@ public class BackendServer {
                             .append(",\"alternateRoute\":\"").append(escape(rsBd.getString("alternate_route"))).append("\"")
                             .append(",\"status\":\"").append(escape(rsBd.getString("status"))).append("\"")
                             .append(",\"reportedAt\":\"").append(rsBd.getTimestamp("reported_at") != null ? rsBd.getTimestamp("reported_at").toString() : "").append("\"")
-                            .append("}");
+                            .append(",\"assignedPassengers\":[");
+                        List<String> miniBusPax = new ArrayList<>();
+                        try (PreparedStatement psPax = con.prepareStatement("SELECT name, pickup_stop FROM students WHERE assigned_bus_id = 4 ORDER BY student_id ASC");
+                             ResultSet rsPax = psPax.executeQuery()) {
+                            while (rsPax.next()) {
+                                miniBusPax.add(rsPax.getString("name") + " (" + rsPax.getString("pickup_stop") + ")");
+                            }
+                        }
+                        for (int pi = 0; pi < miniBusPax.size(); pi++) {
+                            if (pi > 0) activeJson.append(',');
+                            activeJson.append('\"').append(escape(miniBusPax.get(pi))).append('\"');
+                        }
+                        activeJson.append("]}");
                     }
                 }
                 activeJson.append(']');
@@ -2106,7 +2108,8 @@ public class BackendServer {
                     String pickupStop = rs.getString("pickup_stop");
                     if (pickupStop == null || pickupStop.isBlank()) pickupStop = "Perundurai Old Bus Stand";
                     double distKm = getStopDistanceKm(con, pickupStop);
-                    double calculatedFee = Math.round(distKm * 2.0 * 100.0) / 100.0;
+                    int semesterTrips = 200; // 6 Months (100 college working days x 2 daily round trips)
+                    double calculatedFee = Math.round(distKm * 2.0 * semesterTrips * 100.0) / 100.0;
 
                     // Check active breakdowns and notifications affecting this student
                     int busId = rs.getInt("assigned_bus_id");
@@ -2174,7 +2177,7 @@ public class BackendServer {
                             + ",\"ratePerKm\":2.0"
                             + ",\"status\":\"" + escape(feeStatus) + "\""
                             + "},\"attendance\":{"
-                            + "\"todayStatus\":\"" + escape(rs.getString("attendance_status") != null ? rs.getString("attendance_status") : "Present") + "\""
+                            + "\"todayStatus\":\"" + escape(rs.getString("attendance_status") != null ? rs.getString("attendance_status") : "Absent") + "\""
                             + ",\"boarded\":" + rs.getBoolean("boarded")
                             + "},\"alerts\":{"
                             + "\"hasAlert\":" + hasAlert
@@ -2207,7 +2210,7 @@ public class BackendServer {
              PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, studentId);
             try (ResultSet rs = ps.executeQuery()) {
-                String todayStatus = "Present";
+                String todayStatus = "Absent";
                 boolean todayBoarded = false;
                 StringBuilder historyJson = new StringBuilder("[");
                 boolean first = true;
@@ -2477,12 +2480,15 @@ public class BackendServer {
                     if (pickupStop == null || pickupStop.isBlank()) pickupStop = "Perundurai Old Bus Stand";
                     double distKm = getStopDistanceKm(con, pickupStop);
                     double rate = 2.0;
-                    double calculatedFee = Math.round(distKm * rate * 100.0) / 100.0;
+                    int semesterTrips = 200; // 6 Months (100 college working days x 2 daily round trips)
+                    double calculatedFee = Math.round(distKm * rate * semesterTrips * 100.0) / 100.0;
 
                     String json = "{\"studentId\":" + studentId
                             + ",\"pickupStop\":\"" + escape(pickupStop) + "\""
                             + ",\"distanceKm\":" + distKm
                             + ",\"ratePerKm\":" + rate
+                            + ",\"term\":\"6 Months (Semester)\""
+                            + ",\"trips\":" + semesterTrips
                             + ",\"amount\":" + calculatedFee
                             + ",\"status\":\"" + escape(status) + "\""
                             + ",\"cleared\":" + "Paid".equalsIgnoreCase(status)
@@ -2616,15 +2622,23 @@ public class BackendServer {
             String sql = "SELECT s.student_id, s.name, s.pickup_stop, s.transport_authorized, s.assigned_bus_id, "
                     + "COALESCE(b.bus_name, 'Unallocated') AS bus_name, "
                     + "a.attendance_id, a.attendance_date, "
-                    + "COALESCE(a.status, 'Present') AS attendance_status, "
+                    + "COALESCE(a.status, 'Absent') AS attendance_status, "
                     + "COALESCE(a.boarded, 0) AS boarded "
                     + "FROM students s "
                     + "LEFT JOIN buses b ON s.assigned_bus_id = b.bus_id "
                     + "LEFT JOIN attendance a ON s.student_id = a.student_id AND a.attendance_date = ? "
                     + "ORDER BY s.student_id ASC";
 
-            try (Connection con = DBConnection.getConnection();
-                 PreparedStatement ps = con.prepareStatement(sql)) {
+            try (Connection con = DBConnection.getConnection()) {
+                // Ensure attendance records exist for targetDate initially marked as Absent
+                try (PreparedStatement psInit = con.prepareStatement(
+                        "INSERT IGNORE INTO attendance (student_id, attendance_date, status, boarded, travel_intention) " +
+                        "SELECT student_id, ?, 'Absent', 0, 0 FROM students")) {
+                    psInit.setDate(1, targetDate);
+                    psInit.executeUpdate();
+                } catch (SQLException ignored) {}
+
+                try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setDate(1, targetDate);
                 try (ResultSet rs = ps.executeQuery()) {
                     StringBuilder json = new StringBuilder("[");
@@ -2644,6 +2658,7 @@ public class BackendServer {
                     }
                     json.append(']');
                     send(exchange, 200, json.toString());
+                }
                 }
             } catch (SQLException e) {
                 send(exchange, 500, "{\"error\":\"Database error: " + escape(e.getMessage()) + "\"}");
@@ -2980,7 +2995,8 @@ public class BackendServer {
                     if (stopName == null || stopName.isBlank()) stopName = "Perundurai Old Bus Stand";
                     double distKm = getStopDistanceKm(con, stopName);
                     double rate = 2.0;
-                    double calculatedFee = Math.round(distKm * rate * 100.0) / 100.0;
+                    int semesterTrips = 200; // 6 Months (100 college working days x 2 daily round trips)
+                    double calculatedFee = Math.round(distKm * rate * semesterTrips * 100.0) / 100.0;
                     String status = rs.getString("payment_status");
                     if (status == null || status.isBlank()) status = "Paid";
                     Date payDate = rs.getDate("payment_date");
@@ -3042,7 +3058,8 @@ public class BackendServer {
                     }
                 }
                 double distKm = getStopDistanceKm(con, stopName);
-                double calculatedFee = Math.round(distKm * 2.0 * 100.0) / 100.0;
+                int semesterTrips = 200; // 6 Months (100 college working days x 2 daily round trips)
+                double calculatedFee = Math.round(distKm * 2.0 * semesterTrips * 100.0) / 100.0;
 
                 String sql = "INSERT INTO fees (student_id, amount, payment_status, payment_date) "
                         + "VALUES (?, ?, ?, CURRENT_DATE) ON DUPLICATE KEY UPDATE payment_status = VALUES(payment_status), amount = VALUES(amount)";
