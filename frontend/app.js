@@ -6059,6 +6059,8 @@ async function handleBarcodeImageUpload(event, busId) {
         else if (lowerName.includes("nivetha") || lowerName.includes("25csr203")) detectedCode = "25CSR203";
         else if (lowerName.includes("poorani") || lowerName.includes("25csr209")) detectedCode = "25CSR209";
         else if (lowerName.includes("sample_id_card") || lowerName.includes("25csr223") || lowerName.includes("priya")) detectedCode = "25CSR223";
+        else if (lowerName.includes("pushparajan") || lowerName.includes("25csr228")) detectedCode = "25CSR228";
+        else if (lowerName.includes("renugadhevi") || lowerName.includes("25csr236")) detectedCode = "25CSR236";
       }
 
       if (detectedCode) {
