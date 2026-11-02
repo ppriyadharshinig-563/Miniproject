@@ -5,6 +5,7 @@ WORKDIR /app
 # Copy Java source code and the MySQL driver
 COPY *.java ./
 COPY lib/mysql-connector-j-26.7.0/mysql-connector-j-26.7.0.jar lib/mysql-connector-j-26.7.0/
+COPY frontend/ ./frontend/
 
 # Compile the backend and its dependencies, excluding standalone test programs
 RUN javac -sourcepath . -cp ".:lib/mysql-connector-j-26.7.0/mysql-connector-j-26.7.0.jar" BackendServer.java
