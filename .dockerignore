@@ -1,0 +1,6 @@
+.git
+.vscode
+backup_pre_review
+*.log
+*.sql
+*.py

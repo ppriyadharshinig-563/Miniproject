@@ -56,22 +56,21 @@ public class BackendServer {
     public static void main(String[] args) throws IOException {
         seedData();
         int port = 8080;
+        String envPort = System.getenv("PORT");
+        if (envPort != null && !envPort.isBlank()) {
+            try {
+                port = Integer.parseInt(envPort.trim());
+            } catch (NumberFormatException ignored) {}
+        }
         if (args.length > 0) {
             try {
                 port = Integer.parseInt(args[0]);
             } catch (NumberFormatException ignored) {}
-        } else {
-            String envPort = System.getenv("PORT");
-            if (envPort != null && !envPort.isBlank()) {
-                try {
-                    port = Integer.parseInt(envPort.trim());
-                } catch (NumberFormatException ignored) {}
-            }
         }
 
         HttpServer server;
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            server = HttpServer.create(new InetSocketAddress("0.0.0.0", port), 0);
         } catch (java.net.BindException be) {
             System.err.println("\n=======================================================");
             System.err.println("[ERROR] Port " + port + " is already in use by another process.");
@@ -3599,6 +3598,8 @@ public class BackendServer {
     private static boolean allow(HttpExchange exchange, String method) throws IOException {
         exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
         exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Session-Token, X-User-Role, X-Student-Id");
+        exchange.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        exchange.getResponseHeaders().set("Access-Control-Max-Age", "86400");
         if ("OPTIONS".equals(exchange.getRequestMethod())) { send(exchange, 204, ""); return false; }
         if (!method.equals(exchange.getRequestMethod())) { send(exchange, 405, "{\"error\":\"Method not allowed\"}"); return false; }
         return true;
