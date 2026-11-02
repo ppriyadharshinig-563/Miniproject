@@ -1,6 +1,11 @@
 .git
 .vscode
 backup_pre_review
+scratch
 *.log
 *.sql
 *.py
+*.class
+node_modules
+lib/mysql-connector-j-26.7.0/src
+frontend/lib/mysql-connector-j-26.7.0

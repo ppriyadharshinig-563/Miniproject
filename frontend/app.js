@@ -8,28 +8,18 @@ function getApiBase() {
       return "http://localhost:8080/api";
     }
 
-    // 1. Direct origin when loaded from Java Backend Server on port 8080
+    // If loaded directly from the Java Backend Server (port 8080)
     if (port === "8080") {
       return `${window.location.origin}/api`;
     }
 
-    // 2. Local development (e.g. VS Code Live Server on port 5500, localhost, 127.0.0.1)
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:8080/api";
+    // Render serves the frontend and API from the same web service.
+    if (hostname.endsWith(".onrender.com")) {
+      return `${window.location.origin}/api`;
     }
 
-    // 3. GitHub Pages: Check for user-configured Render Backend URL
-    if (hostname.includes("github.io")) {
-      const customUrl = localStorage.getItem("RENDER_BACKEND_URL") || window.RENDER_BACKEND_URL;
-      if (customUrl && customUrl.trim()) {
-        const clean = customUrl.trim().replace(/\/+$/, "");
-        return clean.endsWith("/api") ? clean : clean + "/api";
-      }
-      // Do not append port 8080 to github.io hostname and do not use a fake URL
-      return "";
-    }
-
-    // Fallback for custom domains/hosts
+    // If loaded from VS Code Live Server (e.g. port 5500), Webpack, Vite, etc.
+    // The Java backend runs on port 8080 on the same machine
     return `http://${hostname}:8080/api`;
   }
   return "http://localhost:8080/api";
@@ -37,9 +27,6 @@ function getApiBase() {
 const API_BASE = getApiBase();
 
 async function apiRequest(path, options = {}) {
-  if (!API_BASE) {
-    throw new Error("Backend not connected yet. Once deployed on Render, configure your Render service URL.");
-  }
   const token = sessionStorage.getItem("authToken");
   const headers = {
     "Content-Type": "application/x-www-form-urlencoded",
@@ -90,10 +77,6 @@ function showBackendStatus(connected, message) {
 }
 
 async function checkBackend() {
-  if (!API_BASE) {
-    showBackendStatus(false, "Backend not connected. Deploy on Render & configure URL, or run locally.");
-    return;
-  }
   try {
     await apiRequest("/health", { headers: {} });
     showBackendStatus(true, "Backend connected");
@@ -6098,4 +6081,3 @@ async function handleBarcodeImageUpload(event, busId) {
   };
   reader.readAsDataURL(file);
 }
-
