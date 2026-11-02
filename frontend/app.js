@@ -25,9 +25,14 @@ function getApiBase() {
   return "http://localhost:8080/api";
 }
 const API_BASE = getApiBase();
+let demoModeActive = false;
 
 async function apiRequest(path, options = {}) {
   const token = sessionStorage.getItem("authToken");
+  const isRenderReadFailure = responseStatus =>
+    responseStatus >= 500 &&
+    (!options.method || options.method.toUpperCase() === "GET") &&
+    window.location.hostname.endsWith(".onrender.com");
   const headers = {
     "Content-Type": "application/x-www-form-urlencoded",
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
@@ -53,6 +58,7 @@ async function apiRequest(path, options = {}) {
     } catch (jsonErr) {
       console.warn(`Non-JSON response from ${path}:`, text.substring(0, 200));
       if (!response.ok) {
+        if (isRenderReadFailure(response.status)) activateDemoMode();
         throw new Error(`Server returned HTTP ${response.status} (${response.statusText || 'Error'})`);
       }
       throw new Error("Invalid response from server");
@@ -60,12 +66,35 @@ async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
+    if (isRenderReadFailure(response.status)) activateDemoMode();
     throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
   }
   return data;
 }
 
+function activateDemoMode() {
+  demoModeActive = true;
+
+  const content = document.querySelector(".content-area");
+  if (!content || content.querySelector(".demo-mode-notice")) return;
+
+  const notice = document.createElement("div");
+  notice.className = "demo-mode-notice";
+  notice.setAttribute("role", "status");
+  const title = document.createElement("strong");
+  title.textContent = "Preview mode";
+  const message = document.createElement("span");
+  message.textContent = "Live data is unavailable. Sample data is shown; changes will not be saved.";
+  notice.append(title, message);
+  content.prepend(notice);
+}
+
 function showBackendStatus(connected, message) {
+  if (!connected && demoModeActive && /^Failed to load/i.test(message)) {
+    console.warn(message);
+    return;
+  }
+
   let status = document.querySelector("#backend-status");
   if (!status) {
     status = document.createElement("div");
@@ -1307,7 +1336,46 @@ async function loadManifest(busId) {
     console.log(`Bus ${busId} manifest loaded from database: ${students.length} students`);
   } catch (err) {
     console.error(`Failed to load manifest for Bus ${busId}:`, err);
-    showBackendStatus(false, `Failed to load Bus ${busId} manifest from database`);
+    if (!demoModeActive) activateDemoMode();
+
+    const demoRiders = Array.from({ length: 5 }, (_, index) => ({
+      id: busId * 100 + index + 1,
+      seatNo: String(index + 1).padStart(2, "0"),
+      name: `Demo Rider ${String.fromCharCode(65 + index)}`,
+      stop: ["Perundurai", "Thindal", "Erode", "Vijayamangalam", "Chennimalai"][index],
+      authorized: true,
+      declaredTomorrow: index < 3,
+      boarded: index < 2
+    }));
+    const allocElem = document.querySelector(`#driver-${busId}-allocated`);
+    const vacantElem = document.querySelector(`#driver-${busId}-vacant`);
+    const boardedElem = document.querySelector(`#driver-${busId}-boarded`);
+    const titleElem = document.querySelector(`#driver-${busId}-manifest-title`);
+    const tbody = document.querySelector(`#driver-${busId}-manifest-body`);
+    if (allocElem) allocElem.textContent = "5 / 20";
+    if (vacantElem) vacantElem.textContent = "15 Seats Vacant";
+    if (boardedElem) boardedElem.textContent = "2 / 5";
+    if (titleElem) titleElem.textContent = `Bus ${busId} Sample Passenger Manifest (5 Demo Riders)`;
+    if (!tbody) return;
+
+    tbody.replaceChildren();
+    demoRiders.forEach(rider => {
+      const row = document.createElement("tr");
+      [
+        rider.seatNo,
+        `#${rider.id}`,
+        rider.name,
+        rider.stop,
+        "Sample",
+        rider.declaredTomorrow ? "Yes" : "No",
+        rider.boarded ? "Demo boarded" : "Demo pending"
+      ].forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+      tbody.appendChild(row);
+    });
   }
 }
 
@@ -1888,23 +1956,42 @@ async function loadDashboardStats() {
 
   } catch (err) {
     console.error("Dashboard metrics error:", err);
-    if (elTotal) elTotal.textContent = "Unable to load";
-    if (elTotalTrend) elTotalTrend.textContent = "Error connecting to database";
-    if (elRegBuses) elRegBuses.textContent = "Unable to load";
-    if (elRegBusesTrend) elRegBusesTrend.textContent = "Error connecting to database";
-    if (elTomorrow) elTomorrow.textContent = "Unable to load";
-    if (elTomorrowTrend) elTomorrowTrend.textContent = "Error connecting to database";
-    if (elOperating) elOperating.textContent = "Unable to load";
-    if (elOperatingTrend) elOperatingTrend.textContent = "Error connecting to database";
-    if (elBreakdown) elBreakdown.textContent = "Unable to load";
-    if (elBreakdownTrend) elBreakdownTrend.textContent = "Error connecting to database";
-    if (elUnallocated) elUnallocated.textContent = "Unable to load";
-    if (elUnallocatedTrend) elUnallocatedTrend.textContent = "Error connecting to database";
-    if (elGrievance) elGrievance.textContent = "Unable to load";
-    if (elGrievanceTrend) elGrievanceTrend.textContent = "Error connecting to database";
-    if (elSubtitle) elSubtitle.textContent = "Unable to load fleet allocation snapshot from database.";
+    activateDemoMode();
+    if (elTotal) elTotal.textContent = "40";
+    if (elTotalTrend) elTotalTrend.textContent = "Sample student profiles";
+    if (elRegBuses) elRegBuses.textContent = "15 / 55 Allocated";
+    if (elRegBusesTrend) elRegBusesTrend.textContent = "3 Demo Buses • 55 Total Seats";
+    if (elTomorrow) elTomorrow.textContent = "9";
+    if (elTomorrowTrend) elTomorrowTrend.textContent = "Sample riders expected tomorrow";
+    if (elOperating) elOperating.textContent = "3 / 3 Active";
+    if (elOperatingTrend) elOperatingTrend.textContent = "All demo buses on schedule";
+    if (elBreakdown) elBreakdown.textContent = "0 Incidents";
+    if (elBreakdownTrend) elBreakdownTrend.textContent = "No demo incidents";
+    if (elUnallocated) elUnallocated.textContent = "25 Waitlisted";
+    if (elUnallocatedTrend) elUnallocatedTrend.textContent = "Sample data only";
+    if (elGrievance) elGrievance.textContent = "0";
+    if (elGrievanceTrend) elGrievanceTrend.textContent = "No sample grievance tickets";
+    if (elSubtitle) elSubtitle.textContent = "Sample fleet allocation preview — connect a database for live information.";
     if (snapshotContainer) {
-      snapshotContainer.innerHTML = '<p class="text-sm text-danger">Unable to load fleet allocation snapshot from database.</p>';
+      snapshotContainer.replaceChildren();
+      [
+        { name: "Bus 1", route: "Erode", allocated: 5, capacity: 20 },
+        { name: "Bus 2", route: "Bhavani", allocated: 5, capacity: 20 },
+        { name: "Bus 3", route: "Chennimalai", allocated: 5, capacity: 15 }
+      ].forEach(bus => {
+        const percent = Math.round((bus.allocated / bus.capacity) * 100);
+        const item = document.createElement("div");
+        item.style.marginBottom = "14px";
+        item.innerHTML = `
+          <div style="display:flex;justify-content:space-between;font-size:0.875rem;margin-bottom:5px;">
+            <strong>${bus.name} (${bus.route})</strong>
+            <span><strong>${bus.allocated}</strong> / ${bus.capacity} Demo Seats (${percent}%)</span>
+          </div>
+          <div style="height:8px;background:var(--slate-200,#e2e8f0);border-radius:4px;overflow:hidden;">
+            <div style="width:${percent}%;height:100%;background:var(--blue,#2563eb);border-radius:4px;"></div>
+          </div>`;
+        snapshotContainer.appendChild(item);
+      });
     }
   }
 }
@@ -2824,11 +2911,17 @@ async function renderDriverRouteMap(driverNum, routeData, origin) {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
     });
 
-    darkTransit.addTo(map);
+    let tileFallbackUsed = false;
+    esriStreets.on("tileerror", () => {
+      if (tileFallbackUsed) return;
+      tileFallbackUsed = true;
+      if (!map.hasLayer(darkTransit)) darkTransit.addTo(map);
+    });
+    esriStreets.addTo(map);
 
     L.control.layers({
-      "Dark Transit (OSM)": darkTransit,
       "Esri World Streets": esriStreets,
+      "Dark Transit (OSM)": darkTransit,
       "OpenStreetMap Standard": osm
     }, null, { position: 'topright' }).addTo(map);
 
@@ -3041,6 +3134,54 @@ async function refreshDriverDijkstra(driverNum, origin) {
     await renderDriverRouteMap(driverNum, data, origin);
   } catch (err) {
     console.warn(`Could not refresh Driver ${driverNum} Dijkstra route:`, err);
+    activateDemoMode();
+    const routeStops = {
+      1: [
+        ["Erode Central", 11.3412, 77.7172, "Erode Central Bus Stand"],
+        ["Thindal Murugan Temple", 11.3088, 77.6552, "SH-96 (Perundurai Road)"],
+        ["Perundurai", 11.2753, 77.5839, "SH-96 (Perundurai Road)"],
+        ["Kongu Engineering College", 11.2742, 77.6070, "KEC Access Road"]
+      ],
+      2: [
+        ["Bhavani", 11.4450, 77.6820, "NH-544 (Salem-Kochi Highway)"],
+        ["Chithode", 11.3900, 77.6820, "NH-544 (Salem-Kochi Highway)"],
+        ["Erode", 11.3412, 77.7172, "NH-544 (Salem-Kochi Highway)"],
+        ["Kongu Engineering College", 11.2742, 77.6070, "KEC Access Road"]
+      ],
+      3: [
+        ["Chennimalai", 11.1630, 77.6030, "SH-81 (Chennimalai-Kangeyam Road)"],
+        ["Vijayamangalam", 11.2200, 77.6070, "SH-81 (Chennimalai-Kangeyam Road)"],
+        ["Perundurai", 11.2753, 77.5839, "Perundurai Road"],
+        ["Kongu Engineering College", 11.2742, 77.6070, "KEC Access Road"]
+      ]
+    }[driverNum];
+    if (!routeStops) return;
+
+    const nodes = routeStops.map(([name, lat, lng, roadName], index) => ({
+      name,
+      lat,
+      lng,
+      roadName,
+      edgeWeightMinutes: index === 0 ? 0 : 10
+    }));
+    const demoRoute = {
+      success: true,
+      pathNodeDetails: nodes,
+      orderedStops: nodes.map(node => node.name),
+      totalTravelTime: driverNum === 1 ? 32 : driverNum === 2 ? 35 : 23,
+      totalDistanceKm: driverNum === 1 ? 18.6 : driverNum === 2 ? 21.4 : 14.2,
+      totalTrafficDelay: 0
+    };
+
+    const timeEl = document.querySelector(`#driver-${driverNum}-dijkstra-time`);
+    const statusEl = document.querySelector(`#driver-${driverNum}-dijkstra-status`);
+    const stopsEl = document.querySelector(`#driver-${driverNum}-dijkstra-stops`);
+    const pathEl = document.querySelector(`#driver-${driverNum}-dijkstra-path`);
+    if (timeEl) timeEl.textContent = `${demoRoute.totalTravelTime} mins`;
+    if (statusEl) statusEl.textContent = "Sample route • Clear corridors";
+    if (stopsEl) stopsEl.textContent = `${nodes.length} Demo Stops`;
+    if (pathEl) pathEl.textContent = nodes.map(node => node.name).join(" → ");
+    await renderDriverRouteMap(driverNum, demoRoute, origin);
   }
 }
 

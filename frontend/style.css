@@ -754,6 +754,24 @@ body:has(#view-student-portal:target) .role-switcher-links a[href="#view-student
   margin: 0 auto;
 }
 
+.demo-mode-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  margin-bottom: 20px;
+  padding: 13px 16px;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  background: var(--amber-50);
+  color: #92400e;
+  font-size: 0.88rem;
+}
+
+.demo-mode-notice strong {
+  font-weight: 800;
+}
+
 .view-panel {
   display: none;
   animation: fadeIn 0.25s ease-out;
@@ -2755,4 +2773,3 @@ body:not(.role-student) #sidebarStudentNav {
   font-size: 22px;
   border: 1px solid #bfdbfe;
 }
-
